@@ -29,8 +29,8 @@ Flashy's extension adds tracking events (add to cart, purchase). It also allows 
 		
  - Flashy Integration
 	- Enabled (flashy/flashy/active)
-	- Send purchase before payment (flashy/flashy/log)
-	- Enabled logging (flashy/flashy/purchase)
+	- Send purchase before payment (flashy/flashy/purchase)
+	- Enabled logging (flashy/flashy/log)
 	- API Key (flashy/flashy/flashy_key)
  
  - Flashy Lists
