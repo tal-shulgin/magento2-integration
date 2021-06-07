@@ -115,6 +115,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_flashyLogger;
 
     /**
+     * @var \Magento\Framework\App\ObjectManager
+     */
+    protected $_objectManager;
+
+    /**
+     * @var \Magento\SalesRule\Model\Coupon
+     */
+    protected $_coupon;
+    /**
      * Data constructor.
      * @param \Magento\Framework\App\Helper\Context $context
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
@@ -158,6 +167,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\Data\Form\FormKey $formKey,
         \Magento\Catalog\Helper\ImageFactory $imageHelperFactory,
         \Flashy\Integration\Logger\Logger $flashyLogger
+        \Flashy\Integration\Logger\Logger $flashyLogger,
+        \Magento\SalesRule\Model\Coupon $coupon,
     )
     {
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
@@ -168,6 +179,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         } else {
             $scopeConfig = $context->getScopeConfig();
         }
+        $this->_objectManager = $objectManager;
         $this->_scopeConfig = $scopeConfig;
         $this->_storeManager = $storeManager;
         $this->_productMetadata = $productMetadata;
@@ -188,6 +200,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_formKey = $formKey;
         $this->_imageHelperFactory = $imageHelperFactory;
         $this->_flashyLogger = $flashyLogger;
+        $this->_coupon = $coupon;
         parent::__construct($context);
     }
 
@@ -1363,6 +1376,118 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
         return $messages;
+    }
+
+    /**
+     * Create new coupon
+     *
+     * @param $args
+     * @return array
+     */
+    public function createCoupon( $args=array() ) {
+
+        $this->addLog("Creating new coupon.");
+
+        $ruleId = null;
+        $couponCode = $this->generateCouponCode( 8 );
+
+        $default = array(
+            'name' => 'default',    //String
+            'desc' => 'default desc',   //String
+            'start' => date('Y-m-d'),   //Date
+            'end' => date('Y-m-d', strtotime('+371 days')),    //Date
+            'usesPerCustomer' => 1,     //Int
+            'usesPerCoupon' => 1,   //Int
+            'isActive' => 1,    //1\0
+            'QTY' => 1,    //Int
+            'websiteId' => array(1),    //Array
+            'customersGroupId' => array('0','1','2','3',),  //Array
+            'productsId' => null,   //Array
+            'type' =>  'by_percent',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
+            'amount' => 20,     //Float
+            'includeShipping' => true,     //Bool
+            'freeShipping' => 'yes',    //String
+            'code' => $couponCode,
+        );
+
+        $merged = array_merge( $default, $args );
+
+        if( isset($args['code']) ) {
+            $ruleId = $this->_coupon->loadByCode($merged['code'])->getRuleId();
+        }
+
+        if ( $ruleId != null ) {
+            $this->addLog("Coupon code already exists.");
+            return array(
+                "data" => 'Unable to create coupon, check args.',
+                "success" => false
+            );
+
+        } else {
+            $shoppingCartPriceRule = $this->_objectManager->create('Magento\SalesRule\Model\Rule');
+            $shoppingCartPriceRule->setName($merged['name'])
+                ->setDescription($merged['desc'])
+                ->setFromDate($merged['start'])
+                ->setToDate($merged['end'])
+                ->setUsesPerCustomer($merged['usesPerCustomer'])
+                ->setCustomerGroupIds($merged['customersGroupId'])
+                ->setIsActive($merged['isActive'])
+                ->setSimpleAction($merged['type'])
+                ->setDiscountAmount($merged['amount'])
+                ->setDiscountQty($merged['QTY'])
+                ->setApplyToShipping($merged['includeShipping'])
+                ->setWebsiteIds($merged['websiteId'])
+                ->setUsesPerCoupon($merged['usesPerCoupon'])
+                ->setCouponType(2)
+                ->setCouponCode($merged['code']);
+            $shoppingCartPriceRule->save();
+
+            $this->addLog("Coupon created successfully. " . $merged['code']);
+
+            return array(
+                "data" => $merged['code'],
+                "success" => true
+            );
+        }
+    }
+
+    /**
+     * Generate coupon code
+     *
+     * @param $lenght
+     * @return string
+     */
+    public function generateCouponCode( $length  ) {
+        $couponGenerator = $this->_objectManager->get('\Magento\SalesRule\Model\Coupon\Codegenerator');
+
+        $couponHelper = $this->_objectManager->get('\Magento\SalesRule\Helper\Coupon');
+        $couponGenerator->setFormat($couponHelper::COUPON_FORMAT_ALPHANUMERIC);
+
+        $couponGenerator->setLength( $length ); // length of coupon code upto 32
+        return $couponGenerator->generateCode();
+    }
+
+    public function createURL() {
+        $default = array(
+            'name' => 'defaultttt',    //String
+            'desc' => 'default desccccc',   //String
+            'start' => date('Y-m-d'),   //Date
+            'end' => date('Y-m-d', strtotime('+371 days')),    //Date
+            'usesPerCustomer' => 2,     //Int
+            'usesPerCoupon' => 2,   //Int
+            'isActive' => 1,    //1\0
+            'QTY' => 1,    //Int
+            'websiteId' => array(1),    //Array
+            'customersGroupId' => array('0','1','2','3',),  //Array
+            'productsId' => null,   //Array
+            'type' =>  'to_percent',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
+            'amount' => 20,     //Float
+            'includeShipping' => false,     //Bool
+            'freeShipping' => 'no',    //String
+            'code' => '1225-58955',
+        );
+
+        var_dump( http_build_query(array('args' => $default)) );
     }
 
     public function addLog($m, $l=200)

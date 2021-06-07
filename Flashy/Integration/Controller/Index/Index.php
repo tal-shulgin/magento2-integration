@@ -57,6 +57,10 @@ class Index extends \Magento\Framework\App\Action\Action
                 case 'orders':
                     $resultArray = $this->helper->exportOrders($store_id, $limit, $page);
                     break;
+                case 'createCoupon':
+                    $args = $this->getRequest()->getParam('args');
+                    $resultArray = $this->helper->createCoupon( $args );
+                    break;
                 default:
                     $result->setStatusHeader(401);
                     $resultArray = array("success" => false, "error" => true, "message" => "Export type is not supported.");
