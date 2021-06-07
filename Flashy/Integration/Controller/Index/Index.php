@@ -57,6 +57,9 @@ class Index extends \Magento\Framework\App\Action\Action
                 case 'orders':
                     $resultArray = $this->helper->exportOrders($store_id, $limit, $page);
                     break;
+                case 'log':
+                    $resultArray = $this->helper->exportLogFile($store_id);
+                    break;
                 case 'createCoupon':
                     $args = $this->getRequest()->getParam('args');
                     $resultArray = $this->helper->createCoupon( $args );

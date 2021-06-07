@@ -123,6 +123,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @var \Magento\SalesRule\Model\Coupon
      */
     protected $_coupon;
+
+    /**
+     * @var \Magento\Framework\App\Filesystem\DirectoryList
+     */
+    protected $_directorylist;
+
     /**
      * Data constructor.
      * @param \Magento\Framework\App\Helper\Context $context
@@ -166,9 +172,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Model\ProductFactory $productFactory,
         \Magento\Framework\Data\Form\FormKey $formKey,
         \Magento\Catalog\Helper\ImageFactory $imageHelperFactory,
-        \Flashy\Integration\Logger\Logger $flashyLogger
         \Flashy\Integration\Logger\Logger $flashyLogger,
         \Magento\SalesRule\Model\Coupon $coupon,
+        \Magento\Framework\App\Filesystem\DirectoryList $directorylist
     )
     {
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
@@ -201,6 +207,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_imageHelperFactory = $imageHelperFactory;
         $this->_flashyLogger = $flashyLogger;
         $this->_coupon = $coupon;
+        $this->_directorylist = $directorylist;
+
         parent::__construct($context);
     }
 
@@ -1488,6 +1496,29 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         );
 
         var_dump( http_build_query(array('args' => $default)) );
+    }
+
+    /**
+     * Get exported log file
+     *
+     * @param $store_id
+     * @return array
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     */
+    public function exportLogFile($store_id)
+    {
+        $fileContent = array();
+        $this->addLog("Log exported.");
+
+        if ($this->getFlashyLog()) {
+            $fileContent = explode("\n", file_get_contents($this->_directorylist->getPath('var') . '\log\flashy.log'));
+        }
+
+        return array(
+            "data" => $fileContent,
+            "store_id" => $store_id,
+            "success" => true
+        );
     }
 
     public function addLog($m, $l=200)
