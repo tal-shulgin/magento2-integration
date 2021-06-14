@@ -62,6 +62,7 @@ class Index extends \Magento\Framework\App\Action\Action
                     break;
                 case 'createCoupon':
                     $args = $this->getRequest()->getParam('args');
+                    $args = json_decode(base64_decode( $args ), true);
                     $resultArray = $this->helper->createCoupon( $args );
                     break;
                 default:

@@ -1385,6 +1385,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
         return $messages;
     }
+    
+    public function createJsonEncoded() {
+        $default = array(
+            'discount_type' => 'fixed_cart', // type: fixed_cart, percent, fixed_product, percent_product.
+            'amount' => 0, //amount ?? string
+            'usage_limit' => 1, // total usage ?? string
+            'usage_limit_per_user' => 1, // total single user usage ?? string
+            'expiry_date' => date('Y-m-d', strtotime('+371 days')), // date type example -> '25.05.21'
+            'free_shipping' => false, // bool
+            'product_ids' => null, // array of products id's
+        );
+        return base64_encode( json_encode( $default ) );
+    }
 
     /**
      * Create new coupon
@@ -1393,68 +1406,91 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array
      */
     public function createCoupon( $args=array() ) {
+        try {
+            $this->addLog("Creating new coupon.");
 
-        $this->addLog("Creating new coupon.");
+            $ruleId = null;
+            $couponCode = $this->generateCouponCode(8);
 
-        $ruleId = null;
-        $couponCode = $this->generateCouponCode( 8 );
+            $default = array(
+                'coupon_code' => $couponCode,
+                'discount_type' => 'cart_fixed',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
+                'amount' => 0,     //Float
+                'usage_limit' => 1,   //Int
+                'usage_limit_per_user' => 1,     //Int
+                'expiry_date' => date('Y-m-d', strtotime('+371 days')),    //Date
+                'freeShipping' => false,    //Bool ?? String 'yes' 'no'
+                'product_ids' => null,   //Array
 
-        $default = array(
-            'name' => 'default',    //String
-            'desc' => 'default desc',   //String
-            'start' => date('Y-m-d'),   //Date
-            'end' => date('Y-m-d', strtotime('+371 days')),    //Date
-            'usesPerCustomer' => 1,     //Int
-            'usesPerCoupon' => 1,   //Int
-            'isActive' => 1,    //1\0
-            'QTY' => 1,    //Int
-            'websiteId' => array(1),    //Array
-            'customersGroupId' => array('0','1','2','3',),  //Array
-            'productsId' => null,   //Array
-            'type' =>  'by_percent',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
-            'amount' => 20,     //Float
-            'includeShipping' => true,     //Bool
-            'freeShipping' => 'yes',    //String
-            'code' => $couponCode,
-        );
-
-        $merged = array_merge( $default, $args );
-
-        if( isset($args['code']) ) {
-            $ruleId = $this->_coupon->loadByCode($merged['code'])->getRuleId();
-        }
-
-        if ( $ruleId != null ) {
-            $this->addLog("Coupon code already exists.");
-            return array(
-                "data" => 'Unable to create coupon, check args.',
-                "success" => false
+                // Only exists in Magento, for now we won't use them.
+                'name' => 'Coupon',    //String
+                'desc' => 'Coupon created by Flashy Platform',   //String
+                'start' => date('Y-m-d'),   //Date
+                'isActive' => 1,    //1\0
+                'QTY' => 0,    //Int
+                'websiteId' => array(1),    //Array
+                'customersGroupId' => array(0,1,2,3),  //Array
+                'includeShipping' => false,    //Bool
             );
 
-        } else {
-            $shoppingCartPriceRule = $this->_objectManager->create('Magento\SalesRule\Model\Rule');
-            $shoppingCartPriceRule->setName($merged['name'])
-                ->setDescription($merged['desc'])
-                ->setFromDate($merged['start'])
-                ->setToDate($merged['end'])
-                ->setUsesPerCustomer($merged['usesPerCustomer'])
-                ->setCustomerGroupIds($merged['customersGroupId'])
-                ->setIsActive($merged['isActive'])
-                ->setSimpleAction($merged['type'])
-                ->setDiscountAmount($merged['amount'])
-                ->setDiscountQty($merged['QTY'])
-                ->setApplyToShipping($merged['includeShipping'])
-                ->setWebsiteIds($merged['websiteId'])
-                ->setUsesPerCoupon($merged['usesPerCoupon'])
-                ->setCouponType(2)
-                ->setCouponCode($merged['code']);
-            $shoppingCartPriceRule->save();
+            $merged = array_merge($default, $args);
 
-            $this->addLog("Coupon created successfully. " . $merged['code']);
+            switch ($merged['discount_type']) {
+                case 'percent':
+                    $merged['discount_type'] = 'by_percent';
+                    break;
+                case 'fixed_cart':
+                    $merged['discount_type'] = 'cart_fixed';
+                    break;
+                case 'fixed_product':
+                    $merged['discount_type'] = 'by_fixed';
+                    break;
+            }
+
+            if (isset($args['coupon_code'])) {
+                $ruleId = $this->_coupon->loadByCode($merged['coupon_code'])->getRuleId();
+            }
+
+            if ($ruleId != null) {
+                $this->addLog("Coupon coupon_code already exists.");
+                return array(
+                    "data" => 'Unable to create coupon, check args.',
+                    "success" => false
+                );
+
+            } else {
+                $shoppingCartPriceRule = $this->_objectManager->create('Magento\SalesRule\Model\Rule');
+                $shoppingCartPriceRule->setName($merged['name'])
+                    ->setDescription($merged['desc'])
+                    ->setFromDate($merged['start'])
+                    ->setToDate($merged['expiry_date'])
+                    ->setUsesPerCustomer($merged['usage_limit_per_user'])
+                    ->setCustomerGroupIds($merged['customersGroupId'])
+                    ->setIsActive($merged['isActive'])
+                    ->setSimpleAction($merged['discount_type'])
+                    ->setDiscountAmount($merged['amount'])
+                    ->setDiscountQty($merged['QTY'])
+                    ->setApplyToShipping($merged['includeShipping'])
+                    ->setWebsiteIds($merged['websiteId'])
+                    ->setUsesPerCoupon($merged['usage_limit'])
+                    ->setProductIds($merged['product_ids'])
+                    ->setCouponType(2)
+                    ->setCouponCode($merged['coupon_code']);
+                $shoppingCartPriceRule->save();
+
+                $this->addLog("Coupon created successfully. " . $merged['coupon_code']);
+
+                return array(
+                    "data" => $merged['coupon_code'],
+                    "success" => true
+                );
+            }
+        } catch (\Exception $e) {
+            $this->addLog("Coupon not created. " . $e);
 
             return array(
-                "data" => $merged['code'],
-                "success" => true
+                "data" => "Coupon not created. " . $e,
+                "success" => false
             );
         }
     }
@@ -1473,29 +1509,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         $couponGenerator->setLength( $length ); // length of coupon code upto 32
         return $couponGenerator->generateCode();
-    }
-
-    public function createURL() {
-        $default = array(
-            'name' => 'defaultttt',    //String
-            'desc' => 'default desccccc',   //String
-            'start' => date('Y-m-d'),   //Date
-            'end' => date('Y-m-d', strtotime('+371 days')),    //Date
-            'usesPerCustomer' => 2,     //Int
-            'usesPerCoupon' => 2,   //Int
-            'isActive' => 1,    //1\0
-            'QTY' => 1,    //Int
-            'websiteId' => array(1),    //Array
-            'customersGroupId' => array('0','1','2','3',),  //Array
-            'productsId' => null,   //Array
-            'type' =>  'to_percent',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
-            'amount' => 20,     //Float
-            'includeShipping' => false,     //Bool
-            'freeShipping' => 'no',    //String
-            'code' => '1225-58955',
-        );
-
-        var_dump( http_build_query(array('args' => $default)) );
     }
 
     /**
