@@ -208,8 +208,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_flashyLogger = $flashyLogger;
         $this->_coupon = $coupon;
         $this->_directorylist = $directorylist;
-
         parent::__construct($context);
+
+        $this->flashy = null;
+        $this->apiKey = $this->getFlashyKey();
+
+        if( isset($this->apiKey )) {
+            $this->flashy = $this->setFlashyApi($this->apiKey);
+        }
     }
 
     /**
@@ -293,10 +299,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function checkApiKey($api_key)
     {
         try {
-            $this->flashy = new Flashy($api_key);
-            $info = $this->flashy->account->info();
+            $this->flashy = $this->setFlashyApi($api_key);
 
-            return $info['success'];
+            $info = Flashy\Helper::tryOrLog( function () {
+                return $this->flashy->account->get();
+            });
+
+            return $info->success();
         } catch (\Flashy_Error $e) {
             return null;
         }
@@ -305,13 +314,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Flashy api key.
      *
-     * @param $scope
-     * @param $scopeId
      * @return mixed
      */
-    public function getFlashyKey($scope, $scopeId)
+    public function getFlashyKey()
     {
-        return $this->_scopeConfig->getValue('flashy/flashy/flashy_key', $scope, $scopeId);
+        $store = $this->_request->getParam("website", 0);
+
+        if($store <= 0) {
+            $store = $this->_request->getParam("store", 0);
+        }
+
+        $scope = \Magento\Store\Model\ScopeInterface::SCOPE_STORE;
+
+        return $this->_scopeConfig->getValue('flashy/flashy/flashy_key', $scope, $store);
     }
 
     /**
@@ -376,8 +391,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->addLog('getOrderDetails');
         $data = array();
         try {
-            $this->flashy = new Flashy($this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $this->_storeManager->getStore()->getId()));
-
             $orderId = $this->_checkoutSession->getLastRealOrderId();
 
             $order = $this->_orderFactory->create()->loadByIncrementId($orderId);
@@ -391,10 +404,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 'gender' => $order->getCustomerGender()
             ];
 
-            $this->addLog('Contact Data ' . print_r($contactData, true));
+            $this->addLog('Contact Data ' . json_encode($contactData));
 
-            $this->flashy->contacts->create($contactData);
-            $this->addLog('Flashy contact created');
+            $create = Flashy\Helper::tryOrLog( function () use($contactData) {
+                return $this->flashy->contacts->create($contactData);
+            });
+
+            $this->addLog('Flashy contact created: ' . $create);
 
             $total = (float) $order->getSubtotal();
             $this->addLog('Order total=' . $total);
@@ -433,10 +449,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function orderPlace($order)
     {
         $this->addLog('salesOrderPlaceAfter');
-        $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $this->_storeManager->getStore()->getId());
-        if($this->getFlashyActive() && !empty($flashy_key) && $this->getFlashyPurchase()) {
 
-            $this->flashy = new Flashy($flashy_key);
+        if($this->getFlashyActive() && isset($this->apiKey) && $this->getFlashyPurchase()) {
 
             $account_id = $this->getFlashyId();
 
@@ -453,8 +467,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->addLog('Contact Data ' . print_r($contactData, true));
 
-            $this->flashy->contacts->create($contactData);
-            $this->addLog('Flashy contact created');
+            $create = Flashy\Helper::tryOrLog( function () use($contactData) {
+                return $this->flashy->contacts->create($contactData);
+            });
+
+            $this->addLog('Flashy contact created: ' . json_encode($create));
 
             $total = (float) $order->getSubtotal();
             $this->addLog('Order total=' . $total);
@@ -484,10 +501,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->addLog('Data=' . print_r($data, true));
 
-            $track = $this->flashy->thunder->track($account_id, $contactData['email'], "Purchase", $data);
+            $track = Flashy\Helper::tryOrLog( function () use($data) {
+                return $this->flashy->events->track("Purchase", $data);
+            });
 
-            $this->addLog('Purchase sent.');
-            $this->addLog(json_encode($track));
+            $this->addLog('Purchase sent: ' . json_encode($track));
         }
     }
 
@@ -533,6 +551,19 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $tracking = json_encode($tracking);
 
         return $tracking;
+    }
+
+    /**
+     * Create API object
+     *
+     * @param $flashy_key String
+     * @return Flashy object
+     */
+    public function setFlashyApi($flashy_key) {
+        return new Flashy\Flashy(array(
+            'api_key' => $flashy_key,
+            'log_path' => $this->_directorylist->getPath('var') . '\log\flashy.log'
+        ));
     }
 
     /**
@@ -604,14 +635,17 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getFlashyListOptions()
     {
         $options = array();
-        $store_id = $this->_request->getParam("store", 0);
-        try {
-            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
-            $this->flashy = new Flashy($flashy_key);
 
-            $lists = $this->flashy->lists->all();
-            if(isset($lists['lists'])) {
-                foreach ($lists['lists'] as $list) {
+        if( $this->flashy == null )
+            return;
+
+        try {
+            $lists = Flashy\Helper::tryOrLog( function () {
+                return $this->flashy->lists->get();
+            });
+
+            if(isset($lists)) {
+                foreach ($lists->getData() as $list) {
                     $options[] = array(
                         'value' => strval($list['id']),
                         'label' => $list['title']
@@ -635,26 +669,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return array
      */
-    public function getFlashyCatalogOptions()
-    {
-        $store_id = $this->_request->getParam("store", 0);
-        $options = array();
-        try {
-            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
-            $this->flashy = new Flashy($flashy_key);
-
-            $catalogs = $this->flashy->catalogs->get();
-
-            foreach ($catalogs['catalogs'] as $catalog) {
-                $options[] = array(
-                    'value' => strval($catalog['id']),
-                    'label' => $catalog['title']
-                );
-            }
-        } catch (\Flashy_Error $e) {
-        }
-        return $options;
-    }
+    //    public function getFlashyCatalogOptions()
+//    {
+//        $store_id = $this->_request->getParam("store", 0);
+//        $options = array();
+//        try {
+//            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
+//            $this->flashy = new Flashy($flashy_key);
+//
+//            $catalogs = $this->flashy->catalogs->get();
+//
+//            foreach ($catalogs['catalogs'] as $catalog) {
+//                $options[] = array(
+//                    'value' => strval($catalog['id']),
+//                    'label' => $catalog['title']
+//                );
+//            }
+//        } catch (\Flashy_Error $e) {
+//        }
+//        return $options;
+//    }
 
     /**
      * Get lists as associative array from Flashy.
@@ -664,15 +698,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function getFlashyListOptionsArray()
     {
         $options = array();
-        $store_id = $this->_request->getParam("store", 0);
+
+        if( $this->flashy == null )
+            return;
+
         try {
-            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
+            $lists = Flashy\Helper::tryOrLog( function () {
+                return $this->flashy->lists->get();
+            });
 
-            $this->flashy = new Flashy($flashy_key);
-
-            $lists = $this->flashy->lists->all();
-
-            foreach ($lists['lists'] as $list) {
+            foreach ($lists->getData() as $list) {
                 $options[$list['id']] = $list['title'];
             }
 
@@ -694,20 +729,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         try {
             $list_id = $this->getFlashyList($storeId);
-            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
 
-            if (!empty($list_id) && !empty($flashy_key)) {
-                $this->flashy = new Flashy($flashy_key);
+            if (!empty($list_id) && isset($this->flashy)) {
 
                 if ( $list_id != '' ) {
-                    $this->flashy->lists->subscribe($list_id, array(
-                        "email" => $subscriberEmail,
-                    ));
+                    $subscribe = Flashy\Helper::tryOrLog( function () use($subscriberEmail,$list_id){
+                        return $this->flashy->contacts->subscribe($subscriberEmail,$list_id);
+                    });
+
+                    $this->addLog('Newsletter new subscriber: ' . json_encode($subscribe));
                 } else {
                     $this->addLog('Newsletter new subscriber: lists is not exists');
                 }
             } else {
-                $this->addLog('Newsletter new subscriber: Flashy API Key="' . $flashy_key . '" list id="' . $list_id.'"');
+                $this->addLog('Newsletter new subscriber: Flashy API Key="' . $this->apiKey . '" list id="' . $list_id.'"');
             }
         } catch (\Flashy_Error $e) {
         }
@@ -723,10 +758,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         try {
             $this->addLog('salesOrderChange');
-            $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $this->_storeManager->getStore()->getId());
-            if($this->getFlashyActive() && !empty($flashy_key)) {
 
-                $this->flashy = new Flashy($flashy_key);
+            if($this->getFlashyActive() && isset($this->flashy)) {
+
                 $account_id = $this->getFlashyId();
 
                 if ($order->getStatus() != $order->getOrigData('status')) {
@@ -749,7 +783,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         }
                     }
 
-                    $track = $this->flashy->thunder->track($account_id, $email, "PurchaseUpdated", $data);
+                    $data = array_merge(array("account_id" => $account_id, "flashy_id" => $email), $data);
+
+                    $track = Flashy\Helper::tryOrLog( function () use($data){
+                        return $this->flashy->events->track("PurchaseUpdated", $data);
+                    });
+
+//                    $track = $this->flashy->thunder->track($account_id, $email, "PurchaseUpdated", $data);
 
                     $this->addLog("Purchase Updated with data for $account_id and $email:" . json_encode($track));
                 }
@@ -838,10 +878,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $next_url = null;
         if($limit){
             if(ceil($size/$page_size) > $current_page){
-                $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
                 $base_url = $this->getBaseUrlByScopeId($store_id);
                 $nextpage = $current_page + 1;
-                $next_url = $base_url . "flashy?export=products&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$flashy_key";
+                $next_url = $base_url . "flashy?export=products&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$this->apiKey";
             }
             if($size > $limit){
                 $flashy_pagination = true;
@@ -870,14 +909,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
-    public function exportProductsSend($store_id, $catalog_id)
-    {
-        try {
-            $this->flashy = new Flashy($this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id));
-            return $this->flashy->import->products($this->exportProducts($store_id), $catalog_id);
-        } catch (\Flashy_Error $e) {
-        }
-    }
+    //    public function exportProductsSend($store_id, $catalog_id)
+//    {
+//        try {
+//            $this->flashy = new Flashy($this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id));
+//            return $this->flashy->import->products($this->exportProducts($store_id), $catalog_id);
+//        } catch (\Flashy_Error $e) {
+//        }
+//    }
 
     /**
      * get Customers Total Count
@@ -1038,10 +1077,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $next_url = null;
         if($limit){
             if(ceil($total/$page_size) > $current_page){
-                $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
                 $base_url = $this->getBaseUrlByScopeId($store_id);
                 $nextpage = $current_page + 1;
-                $next_url = $base_url . "flashy?export=contacts&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$flashy_key";
+                $next_url = $base_url . "flashy?export=contacts&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$this->apiKey";
             }
             if($total > $limit){
                 $flashy_pagination = true;
@@ -1141,10 +1179,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $next_url = null;
         if($limit){
             if(ceil($total/$page_size) > $current_page){
-                $flashy_key = $this->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id);
                 $base_url = $this->getBaseUrlByScopeId($store_id);
                 $nextpage = $current_page + 1;
-                $next_url = $base_url . "flashy?export=orders&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$flashy_key";
+                $next_url = $base_url . "flashy?export=orders&store_id=$store_id&limit=$limit&page=$nextpage&flashy_key=$this->apiKey";
             }
             if($total > $limit){
                 $flashy_pagination = true;
@@ -1184,7 +1221,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $scope
      * @param $scope_id
      */
-    public function removeFlashyConnected($scope, $scope_id)
+    public function removeFlashyConnected($scope=0, $scope_id=0)
     {
         $this->_configWriter->delete(self::FLASHY_CONNECTED_STRING_PATH, $scope, $scope_id);
         $this->_configWriter->delete(self::FLASHY_ID_STRING_PATH, $scope, $scope_id);
@@ -1222,12 +1259,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @return int
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
-    public function connectionRequest($api_key, $scope, $scope_id)
+    public function connectionRequest($scope, $scope_id)
     {
         $store_email = $this->getStoreEmail($scope, $scope_id);
         $store_name = $this->getStoreName($scope_id);
         $base_url = $this->getBaseUrlByScopeId($scope_id);
-
 
         $data = array(
             "profile" => array(
@@ -1237,7 +1273,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             ),
             "store"	=> array(
                 "platform" => "magento",
-                "api_key" => $api_key,
+                "api_key" => $this->apiKey,
                 "store_name" => $store_name,
                 "store" => $base_url,
                 "debug" => array(
@@ -1250,18 +1286,23 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $urls = array("contacts", "products", "orders");
         foreach ($urls as $url) {
             $data[$url] = array(
-                "url" => $base_url . "flashy?export=$url&store_id=$scope_id&limit=100&page=1&flashy_pagination=true&flashy_key=" . $api_key,
+                "url" => $base_url . "flashy?export=$url&store_id=$scope_id&limit=100&page=1&flashy_pagination=true&flashy_key=" . $this->apiKey,
                 "format" => "json_url",
             );
         }
 
         try {
-            $this->addLog("Connection Request Data => " . print_r($data, true));
-            $this->flashy->account->connect($data);
+            $this->addLog("Connection Request Data => " . json_encode($data));
 
-            $info = $this->flashy->account->info();
+            Flashy\Helper::tryOrLog( function () use($data){
+                $this->flashy->platforms->connect($data);
+            });
 
-            return $info['account']['id'];
+            $info = Flashy\Helper::tryOrLog( function () {
+                return $this->flashy->account->get();
+            });
+
+            return $info->getData()['id'];
         } catch (\Flashy_Error $e) {
             return 0;
         }
@@ -1322,6 +1363,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     $cartHash->setKey($key);
                     $cartHash->setCart(json_encode($cartItems));
                     $cartHash->save();
+                    $this->addLog("Saved cart hash, key=" . $cartHash->getKey() . " cart=" . $cartHash->getCart());
+
                 } catch (\Exception $e) {
                     $this->addLog("Could not save flashy cart hash key=" . $cartHash->getKey() . " cart=" . $cartHash->getCart());
                 }
@@ -1385,7 +1428,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
         return $messages;
     }
-    
+
     public function createJsonEncoded() {
         $default = array(
             'discount_type' => 'fixed_cart', // type: fixed_cart, percent, fixed_product, percent_product.
@@ -1539,5 +1582,17 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if ($this->getFlashyLog()) {
             $this->_flashyLogger->log($l,$m);
         }
+    }
+
+    public function clearLogs() {
+        unlink($this->_directorylist->getPath('var') . '\log\flashy.log');
+        $this->addLog('Logs deleted.');
+    }
+
+    public function flashy_dd($content)
+    {
+        echo '<pre>';
+        var_dump($content);
+        die;
     }
 }

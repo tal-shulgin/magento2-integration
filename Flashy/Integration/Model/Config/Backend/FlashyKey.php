@@ -49,7 +49,7 @@ class FlashyKey extends \Magento\Framework\App\Config\Value
             $value = 0;
         }
         else {
-            $value = $this->helper->connectionRequest($this->getValue(), $this->getScope(), $this->getScopeId());
+            $value = $this->helper->connectionRequest($this->getScope(), $this->getScopeId());
         }
         $this->helper->setFlashyConnected($value, $this->getScope(), $this->getScopeId());
 

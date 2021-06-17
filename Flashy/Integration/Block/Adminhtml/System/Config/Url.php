@@ -47,7 +47,7 @@ class Url extends \Magento\Backend\Block\AbstractBlock implements
         $html = '<table>';
         $entities = array('products', 'contacts', 'orders');
         foreach ($entities as $entity) {
-            $flashy_url = $base_url . "flashy?export=$entity&store_id=$scope_id&flashy_key=$flashy_key";
+            $flashy_url = $base_url . "flashy?export=$entity&store_id=$scope_id&limit=100&page=1&flashy_pagination=true&flashy_key=$flashy_key";
             $html .= '<tr><td class="label">' . __("Flashy " . ucfirst($entity) . " Url") . '</td>';
             $html .= '<td class="value"><a href="' . $flashy_url . '" target="_blank">' . $flashy_url . '</a></td><td></td></tr>';
         }
