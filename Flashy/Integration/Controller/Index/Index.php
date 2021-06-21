@@ -69,9 +69,10 @@ class Index extends \Magento\Framework\App\Action\Action
                     $args = json_decode(base64_decode( $args ), true);
                     $resultArray = $this->helper->createCoupon( $args );
                     break;
+                case 'info':
+                    $resultArray = $this->helper->exportInfo($store_id);
                 case 'reset':
-                    // TODO reset all flashy args.
-
+                    //TODO add reset function
                     break;
                 default:
                     $result->setStatusHeader(401);
