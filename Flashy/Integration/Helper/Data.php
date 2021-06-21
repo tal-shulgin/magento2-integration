@@ -130,6 +130,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_directorylist;
 
     /**
+     * @var \Magento\CatalogInventory\Api\StockRegistryInterface
+     */
+    protected $_stockRegistry;
+
+    /**
      * Data constructor.
      * @param \Magento\Framework\App\Helper\Context $context
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
@@ -174,7 +179,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Helper\ImageFactory $imageHelperFactory,
         \Flashy\Integration\Logger\Logger $flashyLogger,
         \Magento\SalesRule\Model\Coupon $coupon,
-        \Magento\Framework\App\Filesystem\DirectoryList $directorylist
+        \Magento\Framework\App\Filesystem\DirectoryList $directorylist,
+        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
     )
     {
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
@@ -208,6 +214,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_flashyLogger = $flashyLogger;
         $this->_coupon = $coupon;
         $this->_directorylist = $directorylist;
+        $this->_stockRegistry = $stockRegistry;
         parent::__construct($context);
 
         $this->flashy = null;
@@ -820,6 +827,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $products = $this->_productCollectionFactory->create();
         $products->addAttributeToSelect('*');
+        $products->addAttributeToFilter('status',\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
+        $products->setFlag('has_stock_status_filter', true)->load();
         $products->addStoreFilter($store_id);
 
         if($limit){
@@ -837,8 +846,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         foreach ($products as $_product) {
             try {
+                $product_id = $_product->getId();
+                $productStock = $this->_stockRegistry->getStockItem($product_id);
+                $availability = $productStock->getIsInStock() ? 'in stock' : 'out of stock';
+
                 $export_products[$i] = array(
-                    'id' => $_product->getId(),
+                    'id' => $product_id,
                     'link' => $_product->getProductUrl($_product),
                     'title' => $_product->getName(),
                     'description' => $_product->getShortDescription(),
@@ -847,7 +860,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     'sale_price'	=> $_product->getSpecialPrice(),
                     'sale_price_effective_date'	=> date('Y-m-d\TH:i:sO', strtotime($_product->getSpecialFromDate())).'/'.date('Y-m-d\TH:i:sO', strtotime($_product->getSpecialToDate())),
                     'currency' => $currency,
-                    'tags' => $_product->getMetaKeyword()
+                    'tags' => $_product->getMetaKeyword(),
+                    'availability' => $availability
                 );
 
                 if ($_product->getImage() && $_product->getImage() != 'no_selection') {
@@ -1225,6 +1239,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $this->_configWriter->delete(self::FLASHY_CONNECTED_STRING_PATH, $scope, $scope_id);
         $this->_configWriter->delete(self::FLASHY_ID_STRING_PATH, $scope, $scope_id);
+
+        return 'deleted';
     }
 
     /**
@@ -1574,6 +1590,17 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             "data" => $fileContent,
             "store_id" => $store_id,
             "success" => true
+        );
+    }
+
+    public function exportInfo($store_id) {
+        return array(
+            'store_name' => $this->getStoreName($store_id),
+            'base_url' => $this->getBaseUrlByScopeId($store_id),
+            'api_key' => $this->getFlashyKey(),
+            "magento" => $this->_productMetadata->getVersion(),
+            "php" => phpversion(),
+            "memory_limit" => ini_get('memory_limit'),
         );
     }
 
