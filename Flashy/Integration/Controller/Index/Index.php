@@ -57,23 +57,6 @@ class Index extends \Magento\Framework\App\Action\Action
                 case 'orders':
                     $resultArray = $this->helper->exportOrders($store_id, $limit, $page);
                     break;
-                case 'logs':
-                    $resultArray = $this->helper->exportLogFile($store_id);
-                    break;
-                case 'resetLogs':
-                    $this->helper->clearLogs();
-                    $resultArray = 'Logs deleted';
-                    break;
-                case 'createCoupon':
-                    $args = $this->getRequest()->getParam('args');
-                    $args = json_decode(base64_decode( $args ), true);
-                    $resultArray = $this->helper->createCoupon( $args );
-                    break;
-                case 'info':
-                    $resultArray = $this->helper->exportInfo($store_id);
-                case 'reset':
-                    //TODO add reset function
-                    break;
                 default:
                     $result->setStatusHeader(401);
                     $resultArray = array("success" => false, "error" => true, "message" => "Export type is not supported.");
