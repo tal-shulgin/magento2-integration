@@ -110,10 +110,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_imageHelperFactory;
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $_logger;
-    /**
      * @var \Flashy\Integration\Logger\Logger
      */
     protected $_flashyLogger;
@@ -121,7 +117,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Data constructor.
      * @param \Magento\Framework\App\Helper\Context $context
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\App\ProductMetadataInterface $productMetadata
      * @param \Magento\Framework\App\Config\Storage\WriterInterface $configWriter
@@ -140,12 +135,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param \Magento\Catalog\Model\ProductFactory $productFactory
      * @param \Magento\Framework\Data\Form\FormKey $formKey
      * @param \Magento\Catalog\Helper\ImageFactory $imageHelperFactory
-     * @param \Psr\Log\LoggerInterface $logger
      * @param \Flashy\Integration\Logger\Logger $flashyLogger
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\App\ProductMetadataInterface $productMetadata,
         \Magento\Framework\App\Config\Storage\WriterInterface $configWriter,
@@ -164,10 +157,17 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Model\ProductFactory $productFactory,
         \Magento\Framework\Data\Form\FormKey $formKey,
         \Magento\Catalog\Helper\ImageFactory $imageHelperFactory,
-        \Psr\Log\LoggerInterface $logger,
         \Flashy\Integration\Logger\Logger $flashyLogger
     )
     {
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $productMetadata = $objectManager->get('Magento\Framework\App\ProductMetadataInterface');
+        $v = explode('.',$productMetadata->getVersion());
+        if($v[1] > 1) {
+            $scopeConfig = $objectManager->get('Magento\Framework\App\Config\ScopeConfigInterface');
+        } else {
+            $scopeConfig = $context->getScopeConfig();
+        }
         $this->_scopeConfig = $scopeConfig;
         $this->_storeManager = $storeManager;
         $this->_productMetadata = $productMetadata;
@@ -187,7 +187,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_productFactory = $productFactory;
         $this->_formKey = $formKey;
         $this->_imageHelperFactory = $imageHelperFactory;
-        $this->_logger = $logger;
         $this->_flashyLogger = $flashyLogger;
         parent::__construct($context);
     }
