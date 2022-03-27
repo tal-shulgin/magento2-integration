@@ -1,34 +1,40 @@
 <?php
+
 namespace Flashy\Integration\Observer\Sales;
 
-class OrderSaveAfter implements \Magento\Framework\Event\ObserverInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Event\ObserverInterface;
+
+class OrderSaveAfter implements ObserverInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
      * OrderSaveAfter constructor.
      *
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Data $helper
      */
-    public function __construct(
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+    public function __construct(Data $helper)
+    {
         $this->helper = $helper;
     }
 
     /**
      * Execute observer
      *
-     * @param \Magento\Framework\Event\Observer $observer
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @param Observer $observer
      */
-    public function execute(
-        \Magento\Framework\Event\Observer $observer
-    ) {
-        $order = $observer->getEvent()->getOrder();
-        $this->helper->orderSend($observer,$order);
+    public function execute(Observer $observer)
+    {
+        try {
+            $order = $observer->getEvent()->getOrder();
+            $this->helper->orderSend($order);
+        } catch (\Exception $e) {
+            $this->helper->showMessage($e->getMessage());
+        }
     }
 }

@@ -1,30 +1,43 @@
 <?php
+
 namespace Flashy\Integration\Controller\Index;
 
-class Index extends \Magento\Framework\App\Action\Action
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\App\Action\Action;
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\Result\Json;
+use Magento\Framework\Controller\Result\JsonFactory;
+use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Store\Model\ScopeInterface;
+
+class Index extends Action
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
-     * @var \Magento\Framework\Controller\Result\JsonFactory
+     * @var JsonFactory
      */
     protected $resultJsonFactory;
 
     /**
      * Index constructor.
      *
-     * @param \Magento\Framework\App\Action\Context $context
-     * @param \Flashy\Integration\Helper\Data $helper
-     * @param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
+     * @param Context $context
+     * @param Data $helper
+     * @param JsonFactory $resultJsonFactory
      */
     public function __construct(
-        \Magento\Framework\App\Action\Context $context,
-        \Flashy\Integration\Helper\Data $helper,
-        \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
-    ) {
+        Context     $context,
+        Data        $helper,
+        JsonFactory $resultJsonFactory
+    )
+    {
         $this->helper = $helper;
         $this->resultJsonFactory = $resultJsonFactory;
         parent::__construct($context);
@@ -33,8 +46,9 @@ class Index extends \Magento\Framework\App\Action\Action
     /**
      * Execute index action
      *
-     * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\Result\Json|\Magento\Framework\Controller\ResultInterface
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @return ResponseInterface|Json|ResultInterface
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
     public function execute()
     {
@@ -43,11 +57,11 @@ class Index extends \Magento\Framework\App\Action\Action
         $store_id = $this->getRequest()->getParam('store_id', 0);
         $export_type = $this->getRequest()->getParam('export', 'products');
 
-        if ( $this->helper->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $store_id) === $flashy_key ) {
+        if ($this->helper->getFlashyKey(ScopeInterface::SCOPE_STORE, $store_id) === $flashy_key) {
             $limit = $this->getRequest()->getParam('limit');
             $page = $this->getRequest()->getParam('page');
             $total = 0;
-            switch ($export_type){
+            switch ($export_type) {
                 case 'products':
                     $resultArray = $this->helper->exportProducts($store_id, $limit, $page);
                     break;
@@ -66,8 +80,8 @@ class Index extends \Magento\Framework\App\Action\Action
                     break;
                 case 'createCoupon':
                     $args = $this->getRequest()->getParam('args');
-                    $args = json_decode(base64_decode( $args ), true);
-                    $resultArray = $this->helper->createCoupon( $args );
+                    $args = json_decode(base64_decode($args), true);
+                    $resultArray = $this->helper->createCoupon($args);
                     break;
                 case 'info':
                     $resultArray = $this->helper->exportInfo($store_id);
@@ -77,13 +91,13 @@ class Index extends \Magento\Framework\App\Action\Action
                 default:
                     $result->setStatusHeader(401);
                     $resultArray = array("success" => false, "error" => true, "message" => "Export type is not supported.");
-                    return  $result->setData($resultArray);
+                    return $result->setData($resultArray);
             }
             //$resultArray = array("data" => $export_data, "store_id" => $store_id, "total"=> $total, "success" => true);
         } else {
             $result->setStatusHeader(401);
             $resultArray = array("success" => false, "error" => true, "message" => "You are not authorized to view the content.");
         }
-        return  $result->setData($resultArray);
+        return $result->setData($resultArray);
     }
 }

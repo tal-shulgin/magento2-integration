@@ -13,7 +13,7 @@ Flashy's extension adds tracking events (add to cart, purchase). It also allows 
 
 ## Installation
  - Install required lib via composer with command:
-    - composer require cbox/flashy
+    - composer require flashy/flashy-php
 
  - Copy module files into \app\code\Flashy\Integration
 

@@ -1,28 +1,36 @@
 <?php
+
 namespace Flashy\Integration\Block\Adminhtml\System\Config;
 
-class Url extends \Magento\Backend\Block\AbstractBlock implements
-    \Magento\Framework\Data\Form\Element\Renderer\RendererInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Backend\Block\AbstractBlock;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Data\Form\Element\Renderer\RendererInterface;
+
+class Url extends AbstractBlock implements RendererInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
+
     /**
-     * @var \Magento\Framework\App\Request\Http
+     * @var Http
      */
     protected $_request;
 
     /**
      * Url constructor.
      *
-     * @param \Magento\Framework\App\Request\Http $request
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Http $request
+     * @param Data $helper
      */
     public function __construct(
-        \Magento\Framework\App\Request\Http $request,
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+        Http $request,
+        Data $helper
+    )
+    {
         $this->_request = $request;
         $this->helper = $helper;
     }
@@ -30,16 +38,16 @@ class Url extends \Magento\Backend\Block\AbstractBlock implements
     /**
      * Render element html
      *
-     * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
+     * @param AbstractElement $element
      * @return string
      */
-    public function render(\Magento\Framework\Data\Form\Element\AbstractElement $element)
+    public function render(AbstractElement $element)
     {
         //get store id from get request
         $scope_id = $this->_request->getParam("store", 0);
 
         //get flashy api key
-        $flashy_key = $this->helper->getFlashyKey(\Magento\Store\Model\ScopeInterface::SCOPE_STORE, $scope_id);
+        $flashy_key = $this->helper->getFlashyKey();
 
         //get base url
         $base_url = $this->helper->getBaseUrlByScopeId($scope_id);

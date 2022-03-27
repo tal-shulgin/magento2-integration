@@ -1,21 +1,26 @@
 <?php
+
 namespace Flashy\Integration\Model\Config\Source;
 
-class FlashyList implements \Magento\Framework\Option\ArrayInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\Option\ArrayInterface;
+
+class FlashyList implements ArrayInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
      * FlashyList constructor.
      *
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Data $helper
      */
     public function __construct(
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+        Data $helper
+    )
+    {
         $this->helper = $helper;
     }
 

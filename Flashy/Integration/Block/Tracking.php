@@ -1,25 +1,31 @@
 <?php
+
 namespace Flashy\Integration\Block;
 
-class Tracking extends \Magento\Framework\View\Element\Template
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Element\Template\Context;
+
+class Tracking extends Template
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
      * Constructor
      *
-     * @param \Magento\Framework\View\Element\Template\Context  $context
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Context $context
+     * @param Data $helper
      * @param array $data
      */
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context $context,
-        \Flashy\Integration\Helper\Data $helper,
-        array $data = []
-    ) {
+        Context $context,
+        Data    $helper,
+        array   $data = []
+    )
+    {
         $this->helper = $helper;
         parent::__construct($context, $data);
     }
@@ -28,7 +34,6 @@ class Tracking extends \Magento\Framework\View\Element\Template
      * Get flashy id.
      *
      * @return mixed
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function getFlashyId()
     {
@@ -38,7 +43,7 @@ class Tracking extends \Magento\Framework\View\Element\Template
     /**
      * Get cart data.
      *
-     * @return array|bool|string
+     * @return false|string
      */
     public function getCart()
     {
@@ -57,10 +62,6 @@ class Tracking extends \Magento\Framework\View\Element\Template
 
     /**
      * Set flashy cart cache
-     *
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException
-     * @throws \Magento\Framework\Stdlib\Cookie\FailureToSendException
      */
     public function setFlashyCartCache()
     {

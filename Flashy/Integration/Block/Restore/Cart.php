@@ -1,19 +1,24 @@
 <?php
+
 namespace Flashy\Integration\Block\Restore;
 
-class Cart extends \Magento\Framework\View\Element\Template
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Element\Template\Context;
+
+class Cart extends Template
 {
 
     /**
      * Constructor
      *
-     * @param \Magento\Framework\View\Element\Template\Context  $context
+     * @param Context $context
      * @param array $data
      */
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context $context,
-        array $data = []
-    ) {
+        Context $context,
+        array   $data = []
+    )
+    {
         parent::__construct($context, $data);
     }
 
@@ -22,7 +27,8 @@ class Cart extends \Magento\Framework\View\Element\Template
      *
      * @return mixed
      */
-    public function getKey(){
+    public function getKey()
+    {
         return $this->getRequest()->getParam('id', 0);
     }
 }

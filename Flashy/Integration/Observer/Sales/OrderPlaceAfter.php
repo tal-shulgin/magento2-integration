@@ -1,34 +1,35 @@
 <?php
+
 namespace Flashy\Integration\Observer\Sales;
 
-class OrderPlaceAfter implements \Magento\Framework\Event\ObserverInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Event\ObserverInterface;
+
+class OrderPlaceAfter implements ObserverInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
-     * OrderSaveAfter constructor.
+     * OrderPlaceAfter constructor.
      *
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Data $helper
      */
-    public function __construct(
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+    public function __construct(Data $helper)
+    {
         $this->helper = $helper;
     }
 
     /**
      * Execute observer
      *
-     * @param \Magento\Framework\Event\Observer $observer
-     * @throws \Flashy_Error
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @param Observer $observer
      */
-    public function execute(
-        \Magento\Framework\Event\Observer $observer
-    ) {
+    public function execute(Observer $observer)
+    {
         $order = $observer->getEvent()->getOrder();
         $this->helper->orderPlace($order);
     }

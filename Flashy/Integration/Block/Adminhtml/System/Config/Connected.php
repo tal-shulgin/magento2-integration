@@ -1,28 +1,37 @@
 <?php
+
 namespace Flashy\Integration\Block\Adminhtml\System\Config;
 
-class Connected extends \Magento\Backend\Block\AbstractBlock implements
-    \Magento\Framework\Data\Form\Element\Renderer\RendererInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Backend\Block\AbstractBlock;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Data\Form\Element\Renderer\RendererInterface;
+use Magento\Store\Model\ScopeInterface;
+
+class Connected extends AbstractBlock implements RendererInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
+
     /**
-     * @var \Magento\Framework\App\Request\Http
+     * @var Http
      */
     protected $_request;
 
     /**
      * Url constructor.
      *
-     * @param \Magento\Framework\App\Request\Http $request
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Http $request
+     * @param Data $helper
      */
     public function __construct(
-        \Magento\Framework\App\Request\Http $request,
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+        Http $request,
+        Data $helper
+    )
+    {
         $this->_request = $request;
         $this->helper = $helper;
     }
@@ -30,21 +39,20 @@ class Connected extends \Magento\Backend\Block\AbstractBlock implements
     /**
      * Render element html
      *
-     * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
+     * @param AbstractElement $element
      * @return string
      */
-    public function render(\Magento\Framework\Data\Form\Element\AbstractElement $element)
+    public function render(AbstractElement $element)
     {
         $store = $this->_request->getParam("website", 0);
-        if($store > 0){
-        $scope = \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE;
-        }
-        else{
+        if ($store > 0) {
+            $scope = ScopeInterface::SCOPE_WEBSITE;
+        } else {
             $store = $this->_request->getParam("store", 0);
-            $scope = \Magento\Store\Model\ScopeInterface::SCOPE_STORE;
+            $scope = ScopeInterface::SCOPE_STORE;
         }
         $flashy_connected = $this->helper->getFlashyConnected($scope, $store);
-        $html = '<table><tr><td class="label"></td><td class="value"><span class="flashy-' . ($flashy_connected?'':'not-') . 'connected"> ' . __(($flashy_connected?'C':'Not c').'onnected with Flashy.') . '</span></td><td></td></tr></table>';
+        $html = '<table><tr><td class="label"></td><td class="value"><span class="flashy-' . ($flashy_connected ? '' : 'not-') . 'connected"> ' . __(($flashy_connected ? 'C' : 'Not c') . 'onnected with Flashy.') . '</span></td><td></td></tr></table>';
         return $html;
     }
 }

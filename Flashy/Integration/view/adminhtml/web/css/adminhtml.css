@@ -4,14 +4,19 @@
 .flashy-connected{
     color:#00cc00;
 }
-.flashy-connected::before{
-    content: '\e62d';
-    font-family: 'Admin Icons';
-}
 .flashy-not-connected{
     color:#cc0000;
 }
-.flashy-not-connected::before{
+.flashy-exception {
+    color: #eb5202;
+}
+.flashy-connected::before{
+    content: '\e62d';
+}
+.flashy-not-connected::before, .flashy-exception:before{
     content: '\e623';
+}
+.flashy-connected::before, .flashy-not-connected::before, .flashy-exception:before{
     font-family: 'Admin Icons';
+    margin-right: 5px;
 }

@@ -3,7 +3,7 @@
     "description": "Flashy's extension adds tracking events (add to cart, purchase) It also allows you to sync products and order statuses.",
     "type": "magento2-module",
     "license": "proprietary",
-	"version": "1.0.0",
+	"version": "1.0.1",
     "authors": [
         {
             "email": "hello@flashyapp.com",
@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "cbox/flashy": "*"
+        "flashy/flashy-php": "*"
     },
 	"minimum-stability": "dev",
 	"prefer-stable": true,

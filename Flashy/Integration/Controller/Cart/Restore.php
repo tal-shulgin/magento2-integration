@@ -1,31 +1,38 @@
 <?php
+
 namespace Flashy\Integration\Controller\Cart;
 
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\App\Action\Action;
+use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\Request\InvalidRequestException;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\ResultInterface;
 
-$objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+$objectManager = ObjectManager::getInstance();
 $productMetadata = $objectManager->get('Magento\Framework\App\ProductMetadataInterface');
-$v = explode('.',$productMetadata->getVersion());
+$v = explode('.', $productMetadata->getVersion());
 
-if($v[1] > 2) {
-    class Restore extends \Magento\Framework\App\Action\Action implements CsrfAwareActionInterface
+if ($v[1] > 2) {
+    class Restore extends Action implements CsrfAwareActionInterface
     {
         /**
-         * @var \Flashy\Integration\Helper\Data
+         * @var Data
          */
         public $helper;
 
         /**
-         * Index constructor.
+         * Restore constructor.
          *
-         * @param \Magento\Framework\App\Action\Context $context
-         * @param \Flashy\Integration\Helper\Data $helper
+         * @param Context $context
+         * @param Data $helper
          */
         public function __construct(
-            \Magento\Framework\App\Action\Context $context,
-            \Flashy\Integration\Helper\Data $helper
+            Context $context,
+            Data    $helper
         )
         {
             $this->helper = $helper;
@@ -45,7 +52,7 @@ if($v[1] > 2) {
         /**
          * Execute restore action
          *
-         * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface|void
+         * @return ResponseInterface|ResultInterface|void
          */
         public function execute()
         {
@@ -55,23 +62,24 @@ if($v[1] > 2) {
         }
     }
 } else {
-    class Restore extends \Magento\Framework\App\Action\Action
+    class Restore extends Action
     {
         /**
-         * @var \Flashy\Integration\Helper\Data
+         * @var Data
          */
         public $helper;
 
         /**
-         * Index constructor.
+         * Restore constructor.
          *
-         * @param \Magento\Framework\App\Action\Context $context
-         * @param \Flashy\Integration\Helper\Data $helper
+         * @param Context $context
+         * @param Data $helper
          */
         public function __construct(
-            \Magento\Framework\App\Action\Context $context,
-            \Flashy\Integration\Helper\Data $helper
-        ) {
+            Context $context,
+            Data    $helper
+        )
+        {
             $this->helper = $helper;
             parent::__construct($context);
         }
@@ -79,7 +87,7 @@ if($v[1] > 2) {
         /**
          * Execute restore action
          *
-         * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface|void
+         * @return ResponseInterface|ResultInterface|void
          */
         public function execute()
         {

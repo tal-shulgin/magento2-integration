@@ -1,6 +1,8 @@
 <?php
+
 namespace Flashy\Integration\Setup;
 
+use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\Setup\InstallSchemaInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
@@ -28,21 +30,21 @@ class InstallSchema implements InstallSchemaInterface
             ->newTable($installer->getTable('flashy_cart_hash'))
             ->addColumn(
                 'id',
-                \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                Table::TYPE_INTEGER,
                 null,
                 ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
                 'Id'
             )
             ->addColumn(
                 'key',
-                \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                Table::TYPE_TEXT,
                 255,
                 [],
                 'Flashy user id'
             )
             ->addColumn(
                 'cart',
-                \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                Table::TYPE_TEXT,
                 '64k',
                 [],
                 'The cart contents'

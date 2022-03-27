@@ -1,34 +1,37 @@
 <?php
+
 namespace Flashy\Integration\Observer\Checkout;
 
-class CartSaveAfter implements \Magento\Framework\Event\ObserverInterface
+use Flashy\Integration\Helper\Data;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Event\ObserverInterface;
+
+class CartSaveAfter implements ObserverInterface
 {
     /**
-     * @var \Flashy\Integration\Helper\Data
+     * @var Data
      */
     public $helper;
 
     /**
-     * OrderSaveAfter constructor.
+     * CartSaveAfter constructor.
      *
-     * @param \Flashy\Integration\Helper\Data $helper
+     * @param Data $helper
      */
-    public function __construct(
-        \Flashy\Integration\Helper\Data $helper
-    ) {
+    public function __construct(Data $helper)
+    {
         $this->helper = $helper;
     }
 
     /**
      * Execute observer
      *
-     * @param \Magento\Framework\Event\Observer $observer
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @param Observer $observer
+     * @return void
      */
-    public function execute(
-        \Magento\Framework\Event\Observer $observer
-    ) {
-        if($this->helper->getFlashyActive()) {
+    public function execute(Observer $observer)
+    {
+        if ($this->helper->getFlashyActive()) {
             $cart = $observer->getEvent()->getCart();
             $this->helper->updateFlashyCartHash($cart);
         }
