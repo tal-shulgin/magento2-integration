@@ -279,7 +279,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $scope_id
      * @return string
      */
-    public function getBaseUrlByScopeId($scope_id): string
+    public function getBaseUrlByScopeId($scope_id)
     {
         $baseUrl = '';
         try {
@@ -296,7 +296,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $store_id
      * @return string
      */
-    public function getCurrencyByStoreId($store_id): string
+    public function getCurrencyByStoreId($store_id)
     {
         $currentCurrencyCode = '';
         try {
@@ -313,7 +313,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $configPath
      * @return mixed
      */
-    public function getFlashyConfig($configPath): mixed
+    public function getFlashyConfig($configPath)
     {
         $flashyConfig = '';
         try {
@@ -329,7 +329,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return mixed
      */
-    public function getFlashyActive(): mixed
+    public function getFlashyActive()
     {
         return $this->getFlashyConfig(self::FLASHY_ACTIVE_STRING_PATH);
     }
@@ -339,7 +339,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return mixed
      */
-    public function getFlashyId(): mixed
+    public function getFlashyId()
     {
         return $this->getFlashyConfig(self::FLASHY_ID_STRING_PATH);
     }
@@ -349,7 +349,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return mixed
      */
-    public function getFlashyPurchase(): mixed
+    public function getFlashyPurchase()
     {
         return $this->getFlashyConfig(self::FLASHY_PURCHASE_STRING_PATH);
     }
@@ -359,7 +359,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return mixed
      */
-    public function getFlashyLog(): mixed
+    public function getFlashyLog()
     {
         return $this->getFlashyConfig(self::FLASHY_LOG_STRING_PATH);
     }
@@ -411,7 +411,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $storeId
      * @return string
      */
-    public function getStoreName($storeId): string
+    public function getStoreName($storeId)
     {
         $storeName = 'Default Store';
         try {
@@ -429,7 +429,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $scopeId
      * @return mixed
      */
-    public function getStoreEmail($scope, $scopeId): mixed
+    public function getStoreEmail($scope, $scopeId)
     {
         return $this->_scopeConfig->getValue('trans_email/ident_general/email', $scope, $scopeId);
     }
@@ -441,7 +441,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $scopeId
      * @return bool
      */
-    public function getFlashyConnected($scope, $scopeId): bool
+    public function getFlashyConnected($scope, $scopeId)
     {
         return $this->_scopeConfig->getValue(self::FLASHY_CONNECTED_STRING_PATH, $scope, $scopeId) == '1';
     }
@@ -452,7 +452,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param $storeId
      * @return mixed
      */
-    public function getFlashyList($storeId): mixed
+    public function getFlashyList($storeId)
     {
         return $this->_scopeConfig->getValue(
             self::FLASHY_LIST_STRING_PATH,
@@ -466,7 +466,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return array
      */
-    public function getOrderDetails(): array
+    public function getOrderDetails()
     {
         $this->addLog('getOrderDetails');
         $data = array();
