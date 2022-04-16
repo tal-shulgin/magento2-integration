@@ -1295,11 +1295,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Do connection request to Flashy.
      *
+     * @param $flashyKey
      * @param $scope
      * @param $scope_id
      * @return int
      */
-    public function connectionRequest($scope, $scope_id)
+    public function connectionRequest($flashyKey, $scope, $scope_id)
     {
         $store_email = $this->getStoreEmail($scope, $scope_id);
         $store_name = $this->getStoreName($scope_id);
@@ -1313,7 +1314,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             ),
             "store" => array(
                 "platform" => "magento",
-                "api_key" => $this->apiKey,
+                "api_key" => $flashyKey,
                 "store_name" => $store_name,
                 "store" => $base_url,
                 "debug" => array(
@@ -1326,7 +1327,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $urls = array("contacts", "products", "orders");
         foreach ($urls as $url) {
             $data[$url] = array(
-                "url" => $base_url . "flashy?export=$url&store_id=$scope_id&limit=100&page=1&flashy_pagination=true&flashy_key=" . $this->apiKey,
+                "url" => $base_url . "flashy?export=$url&store_id=$scope_id&limit=100&page=1&flashy_pagination=true&flashy_key=" . $flashyKey,
                 "format" => "json_url",
             );
         }
