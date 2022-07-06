@@ -56,7 +56,7 @@ if ($v[1] > 2) {
          */
         public function execute()
         {
-            $key = $this->getRequest()->getParam('id', 0);
+            $key = $this->getRequest()->getParam('flashy', 0);
             $this->helper->restoreFlashyCartHash($key);
             $this->getResponse()->setRedirect('/checkout/cart/index');
         }
@@ -91,7 +91,7 @@ if ($v[1] > 2) {
          */
         public function execute()
         {
-            $key = $this->getRequest()->getParam('id', 0);
+            $key = $this->getRequest()->getParam('flashy', 0);
             $this->helper->restoreFlashyCartHash($key);
             $this->getResponse()->setRedirect('/checkout/cart/index');
         }

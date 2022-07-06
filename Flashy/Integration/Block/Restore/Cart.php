@@ -29,6 +29,6 @@ class Cart extends Template
      */
     public function getKey()
     {
-        return $this->getRequest()->getParam('id', 0);
+        return $this->getRequest()->getParam('flashy', 0);
     }
 }

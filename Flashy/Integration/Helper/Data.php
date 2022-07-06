@@ -609,10 +609,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return false|string
      */
-    public function getCart()
+    public function getCart($cart = null)
     {
         try {
-            $cart = $this->_checkoutSession->getQuote();
+            if( $cart === null )
+                $cart = $this->_checkoutSession->getQuote();
 
             $tracking = [];
 
@@ -657,15 +658,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Set flashy cart cache in cookie.
      */
-    public function setFlashyCartCache()
+    public function setFlashyCartCache($cart = null)
     {
         try {
             $metadata = $this->_cookieMetadataFactory
                 ->createPublicCookieMetadata()
-                ->setDuration(self::COOKIE_DURATION);
+                ->setDuration(self::COOKIE_DURATION*365)
+                ->setHttpOnly(false)
+                ->setPath('/');
+
             $this->_cookieManager->setPublicCookie(
                 'flashy_cart_cache',
-                base64_encode($this->getCart()),
+                base64_encode($this->getCart($cart)),
                 $metadata
             );
         } catch (\Exception $e) {
@@ -1357,6 +1361,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function updateFlashyCartHash($cart)
     {
+        $this->updateFlashyCache($cart);
+
         //cart hash will not be updated
         $updateCart = false;
 
@@ -1412,6 +1418,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
         }
+    }
+
+    /**
+     * Update Flashy Cache
+     */
+    public function updateFlashyCache($cart)
+    {
+        $cart = $this->setFlashyCartCache($cart->getQuote());
     }
 
     /**
@@ -1497,27 +1511,30 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->addLog("Creating new coupon.");
 
             $ruleId = null;
-            $couponCode = $this->generateCouponCode(8);
+            $couponCode = $this->generateCouponCode(12);
+
+            if( isset($args['prefix']) )
+            {
+                $couponCode = $args['prefix'] . "_" . $couponCode;
+            }
+
+            $this->_objectManager = \Magento\Framework\App\ObjectManager::getInstance();
 
             $default = array(
                 'coupon_code' => $couponCode,
                 'discount_type' => 'cart_fixed',    //String options - 'to_percent' 'by_percent' 'to_fixed' 'by_fixed' 'cart_fixed' 'buy_x_get_y'
-                'amount' => 0,     //Float
-                'usage_limit' => 1,   //Int
-                'usage_limit_per_user' => 1,     //Int
+                'amount' => 0,
+                'usage_limit' => 1,
+                'usage_limit_per_user' => 1,
                 'expiry_date' => date('Y-m-d', strtotime('+371 days')),    //Date
-                'freeShipping' => false,    //Bool ?? String 'yes' 'no'
-                'product_ids' => null,   //Array
+                'product_ids' => null,
 
                 // Only exists in Magento, for now we won't use them.
                 'name' => 'Coupon',    //String
                 'desc' => 'Coupon created by Flashy Platform',   //String
                 'start' => date('Y-m-d'),   //Date
-                'isActive' => 1,    //1\0
-                'QTY' => 0,    //Int
-                'websiteId' => array(1),    //Array
-                'customersGroupId' => array(0, 1, 2, 3),  //Array
-                'includeShipping' => false,    //Bool
+                'isActive' => 1,
+                'includeShipping' => true,
             );
 
             $merged = array_merge($default, $args);
@@ -1552,17 +1569,35 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     ->setFromDate($merged['start'])
                     ->setToDate($merged['expiry_date'])
                     ->setUsesPerCustomer($merged['usage_limit_per_user'])
-                    ->setCustomerGroupIds($merged['customersGroupId'])
+                    ->setCustomerGroupIds(array('0','1','2','3',))
+                    ->setWebsiteIds(array('1',))
                     ->setIsActive($merged['isActive'])
                     ->setSimpleAction($merged['discount_type'])
                     ->setDiscountAmount($merged['amount'])
-                    ->setDiscountQty($merged['QTY'])
-                    ->setApplyToShipping($merged['includeShipping'])
-                    ->setWebsiteIds($merged['websiteId'])
+                    ->setDiscountQty(1)
+                    ->setApplyToShipping(0)
                     ->setUsesPerCoupon($merged['usage_limit'])
                     ->setProductIds($merged['product_ids'])
                     ->setCouponType(2)
+                    ->setIsRss(0)
                     ->setCouponCode($merged['coupon_code']);
+
+                    if( $args['minimum_amount'] > 0 )
+                    {
+                        $actions = $this->_objectManager->create('Magento\SalesRule\Model\Rule\Condition\Combine')
+                            ->setType('Magento\SalesRule\Model\Rule\Condition\Address')
+                            ->setAttribute('base_subtotal_with_discount')
+                            ->setOperator('>')
+                            ->setValue($args['minimum_amount']);
+                        
+                        $shoppingCartPriceRule->getActions()->addCondition($actions);
+                    }
+
+                if( $args['free_shipping'] )
+                {
+                    $shoppingCartPriceRule->setSimpleFreeShipping(1);
+                }
+
                 $shoppingCartPriceRule->save();
 
                 $this->addLog("Coupon created successfully. " . $merged['coupon_code']);
@@ -1590,6 +1625,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function generateCouponCode($length)
     {
+        $this->_objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+
+        $this->_objectManager->create('Magento\SalesRule\Model\Rule');
         $couponGenerator = $this->_objectManager->get('\Magento\SalesRule\Model\Coupon\Codegenerator');
 
         $couponHelper = $this->_objectManager->get('\Magento\SalesRule\Helper\Coupon');

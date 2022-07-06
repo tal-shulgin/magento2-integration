@@ -19,17 +19,56 @@
 			<?php }  ?>
 		//]]>
 	</script>
-	<?php if( $block->getCart() ) : ?>
-		<script type="text/javascript">
-			//<![CDATA[
-				<?php
-					$cart_cache = $block->getFlashyCartCache();
-					if( base64_encode($block->getCart()) !== $cart_cache ) : ?>
-						flashy('UpdateCart', <?php echo $block->getCart(); ?>);
-			    		<?php
-                        $block->setFlashyCartCache();
-			    	endif; ?>
-			//]]>
-		</script>
-	<?php endif; ?>
+
+	<script type="text/javascript">
+		//<![CDATA[
+            function getFlashyCookie(cname) {
+                var name = cname + "=";
+                var decodedCookie = decodeURIComponent(document.cookie);
+                var ca = decodedCookie.split(';');
+                for(var i = 0; i <ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                        c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                        return c.substring(name.length, c.length);
+                    }
+                }
+                return "";
+            }
+
+            function setFlashyCookie(cname, cvalue) {
+                var d = new Date();
+                d.setTime(d.getTime() + (365*24*60*60*1000));
+                var expires = "expires="+ d.toUTCString();
+                document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+            }
+
+            window.addEventListener('onFlashy', function() {
+
+                function flashyCartManager() {
+
+                    if (getFlashyCookie("flashy_cart_cache") != getFlashyCookie("flashy_cart"))
+                    {
+                        setFlashyCookie("flashy_cart", getFlashyCookie("flashy_cart_cache"));
+
+                        flashyCart = JSON.parse(window.atob(getFlashyCookie("flashy_cart")));
+
+                        if( flashyCart.value && flashyCart.value > 0 )
+                            flashy('UpdateCart', flashyCart);
+
+                        console.log("Flashy Update Cart:", flashyCart);
+                    }
+                };
+
+                flashyCartManager();
+
+                window.setInterval(function() {
+                    flashyCartManager();
+                }, 1200);
+
+            });
+		//]]>
+	</script>
 <?php endif; ?>
