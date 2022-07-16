@@ -475,14 +475,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $order = $this->_orderFactory->create()->loadByIncrementId($orderId);
 
-            $contactData = [
-                'email' => $order->getCustomerEmail(),
-                'first_name' => $order->getShippingAddress()->getFirstname(),
-                'last_name' => $order->getShippingAddress()->getLastname(),
-                'phone' => $order->getShippingAddress()->getTelephone(),
-                'city' => $order->getShippingAddress()->getCity(),
-                'gender' => $order->getCustomerGender()
-            ];
+            $contactData = $this->getContactData($order);
 
             $this->addLog('Contact Data ' . json_encode($contactData));
 
@@ -535,14 +528,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->addLog('account_id=' . $account_id);
 
-            $contactData = [
-                'email' => $order->getCustomerEmail(),
-                'first_name' => $order->getShippingAddress()->getFirstname(),
-                'last_name' => $order->getShippingAddress()->getLastname(),
-                'phone' => $order->getShippingAddress()->getTelephone(),
-                'city' => $order->getShippingAddress()->getCity(),
-                'gender' => $order->getCustomerGender()
-            ];
+            $contactData = $this->getContactData($order);
 
             $this->addLog('Contact Data ' . print_r($contactData, true));
 
@@ -586,6 +572,41 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $this->addLog('Purchase sent: ' . json_encode($track));
         }
+    }
+
+
+    /**
+     * Get contact information from order
+     */
+    public function getContactData($order)
+    {
+        $data = [
+            'email' => $order->getCustomerEmail(),
+            'gender' => $order->getCustomerGender()
+        ];
+
+        if( $order->getShippingAddress() )
+        {
+            $data['first_name'] = $order->getShippingAddress()->getFirstname();
+
+            $data['last_name'] = $order->getShippingAddress()->getLastname();
+
+            $data['phone'] = $order->getShippingAddress()->getTelephone();
+
+            $data['city'] = $order->getShippingAddress()->getCity();
+        }
+        else if( $order->getBillingAddress() )
+        {
+            $data['first_name'] = $order->getBillingAddress()->getFirstname();
+
+            $data['last_name'] = $order->getBillingAddress()->getLastname();
+
+            $data['phone'] = $order->getBillingAddress()->getTelephone();
+
+            $data['city'] = $order->getBillingAddress()->getCity();
+        }
+
+        return $data;
     }
 
     /**
