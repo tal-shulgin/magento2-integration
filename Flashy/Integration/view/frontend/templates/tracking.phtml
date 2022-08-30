@@ -17,15 +17,16 @@
 					});
 
 			<?php }   ?>
-
 			//]]>
 			</script>
 			<?php
-			if( $block->getCart() )
+			if( $block->getFlashyCartCache() )
 			{
 				$catsName = "";
 
-				$items = json_decode($block->getCart());
+				$items = base64_decode($block->getFlashyCartCache());
+
+				$items = json_decode($items);
 
 				if ( count($items->content_ids) > 0 )
 				{
@@ -36,24 +37,24 @@
 						if( $counter < (count($items->content_ids) - 1) )
 							$catsName .= " , ";
 					}
-
 				}
+			    ?>
+                <script type="text/javascript">
+                    //<![CDATA[
+                        window.onload = function()
+                        {
+                            var flashy_categories = document.createElement('div');
 
+                            flashy_categories.id = "flashy_categories";
 
-			?>
-	<script type="text/javascript">
-			window.onload = function(){
-				var flashy_categories = document.createElement('div');
+                            flashy_categories.style.display = "none";
 
-				flashy_categories.id = "flashy_categories";
+                            flashy_categories.innerText = "<?php echo $catsName; ?>";
 
-				flashy_categories.style.display = "none";
-
-				flashy_categories.innerText = "<?php echo $catsName; ?>";
-
-				document.body.append(flashy_categories);
-			}
-	</script>
+                            document.body.append(flashy_categories);
+                        }
+                    //]]>
+                </script>
 		<?php } ?>
 
 	<script type="text/javascript">
