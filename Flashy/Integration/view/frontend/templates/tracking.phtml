@@ -30,13 +30,14 @@
 
 				if ( count($items->content_ids) > 0 )
 				{
+                    $categories = [];
+
 					foreach($items->content_ids as $counter => $item)
 					{
-						$catsName .= $block->getProductCategoryName($item);
-
-						if( $counter < (count($items->content_ids) - 1) )
-							$catsName .= " , ";
+						$categories[] = $block->getProductCategoryName($item);
 					}
+
+                    $catsName = implode(',', $categories);
 				}
 			    ?>
                 <script type="text/javascript">
