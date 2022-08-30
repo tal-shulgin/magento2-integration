@@ -8,7 +8,6 @@
 		//<![CDATA[
 			'use strict'; (function (a, b, c) { if (!a.flashy) { a.flashy = function () { a.flashy.event && a.flashy.event(arguments), a.flashy.queue.push(arguments) }, a.flashy.queue = []; var d = document.getElementsByTagName('script')[0], e = document.createElement(b); e.src = c, e.async = !0, d.parentNode.insertBefore(e, d) } })(window, 'script', 'https://js.flashyapp.com/thunder.js'), flashy('init', <?php echo $block->getFlashyId(); ?>);
 			flashy('PageView');
-
 			<?php
 				$flashy_id = $block->getFlashyIdCookie();
 				if( $block->customerIsLoggedIn() && !$flashy_id ) {
@@ -16,9 +15,46 @@
 					flashy('setCustomer', {
 						"email": "<?php echo base64_encode($block->getCustomerEmail()); ?>"
 					});
-			<?php }  ?>
-		//]]>
+
+			<?php }   ?>
+
+			//]]>
+			</script>
+			<?php
+			if( $block->getCart() )
+			{
+				$catsName = "";
+
+				$items = json_decode($block->getCart());
+
+				if ( count($items->content_ids) > 0 )
+				{
+					foreach($items->content_ids as $counter => $item)
+					{
+						$catsName .= $block->getProductCategoryName($item);
+
+						if( $counter < (count($items->content_ids) - 1) )
+							$catsName .= " , ";
+					}
+
+				}
+
+
+			?>
+	<script type="text/javascript">
+			window.onload = function(){
+				var flashy_categories = document.createElement('div');
+
+				flashy_categories.id = "flashy_categories";
+
+				flashy_categories.style.display = "none";
+
+				flashy_categories.innerText = "<?php echo $catsName; ?>";
+
+				document.body.append(flashy_categories);
+			}
 	</script>
+		<?php } ?>
 
 	<script type="text/javascript">
 		//<![CDATA[

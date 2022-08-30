@@ -910,17 +910,23 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function exportProducts($store_id, $limit, $page)
     {
         $products = $this->_productCollectionFactory->create();
+
         $products->addAttributeToSelect('*');
+
         $products->addAttributeToFilter('status', \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
-        $products->setFlag('has_stock_status_filter', true)->load();
+
         $products->addStoreFilter($store_id);
 
-        if ($limit) {
+        if ($limit)
+        {
             $products->setPageSize($limit);
-            if ($page) {
+            if ($page)
+            {
                 $products->setCurPage($page);
             }
         }
+
+        $products->setFlag('has_stock_status_filter', true)->load();
 
         $export_products = array();
 
@@ -961,6 +967,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 }
 
                 $export_products[$i]['product_type'] = substr($export_products[$i]['product_type'], 0, -1);
+
+                $_objectManager = ObjectManager::getInstance();
+
+                $is_parent = $_objectManager->get('Magento\ConfigurableProduct\Model\Product\Type\Configurable')->getParentIdsByChild($product_id);
+
+                $export_products[$i]['variant'] = (empty($is_parent[0]) ? 0 : 1);
+
+                $export_products[$i]['parent_id'] = (empty($is_parent[0]) ? 0 : $is_parent[0]);
 
                 $i++;
             } catch (\Exception $e) {
