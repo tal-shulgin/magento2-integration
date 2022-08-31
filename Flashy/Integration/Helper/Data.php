@@ -955,7 +955,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 );
 
                 if ($_product->getImage() && $_product->getImage() != 'no_selection') {
-                    $export_products[$i]['image_link'] = $this->_imageHelperFactory->create()->init($_product, 'product_thumbnail_image')->getUrl();
+                    $export_products[$i]['image_link'] = $this->_imageHelperFactory->create()->init($_product, 'product_base_image')->getUrl();
                 }
 
                 $categoryCollection = $_product->getCategoryCollection()->addAttributeToSelect('name');
