@@ -533,7 +533,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->addLog('Contact Data ' . print_r($contactData, true));
 
             $create = Helper::tryOrLog(function () use ($contactData) {
-                return $this->flashy->contacts->create($contactData);
+                return $this->flashy->contacts->subscribe($contactData, $this->getFlashyList(0));
             });
 
             $this->addLog('Flashy contact created: ' . json_encode($create));
