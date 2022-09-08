@@ -50,6 +50,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const FLASHY_KEY_STRING_PATH = 'flashy/flashy/flashy_key';
 
     const FLASHY_LIST_STRING_PATH = 'flashy/flashy_lists/flashy_list';
+
+	const FLASHY_ENVIRONMET = 'flashy/flashy/env';
+
     /**
      * @var CookieManagerInterface
      */
@@ -594,6 +597,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $data['phone'] = $order->getShippingAddress()->getTelephone();
 
             $data['city'] = $order->getShippingAddress()->getCity();
+
+			$data['region'] = $order->getShippingAddress()->getRegion();
+
+			$data['address'] = $order->getShippingAddress()->getStreetLine(1);
+
+			if ( !empty($order->getShippingAddress()->getStreetLine(2)) )
+			{
+				$data['address'] .= ' , '.$order->getShippingAddress()->getStreetLine(2);
+			}
+
+			if ( !empty($order->getShippingAddress()->getStreetLine(3)) )
+			{
+				$data['address'] .= ' , '.$order->getShippingAddress()->getStreetLine(3);
+			}
+
+			if ( !empty($order->getCustomerDob()) )
+			{
+				$data['birthday'] = $order->getCustomerDob();
+			}
+
         }
         else if( $order->getBillingAddress() )
         {
@@ -604,6 +627,25 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $data['phone'] = $order->getBillingAddress()->getTelephone();
 
             $data['city'] = $order->getBillingAddress()->getCity();
+
+			$data['region'] = $order->getBillingAddress()->getRegion();
+
+			$data['address'] = $order->getBillingAddress()->getStreetLine(1);
+
+			if ( !empty($order->getBillingAddress()->getStreetLine(2)) )
+			{
+				$data['address'] .= ' , '.$order->getBillingAddress()->getStreetLine(2);
+			}
+
+			if ( !empty($order->getBillingAddress()->getStreetLine(3)) )
+			{
+				$data['address'] .= ' , '.$order->getBillingAddress()->getStreetLine(3);
+			}
+
+			if ( !empty($order->getCustomerDob()) )
+			{
+				$data['birthday'] = $order->getCustomerDob();
+			}
         }
 
         return $data;
@@ -624,6 +666,38 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         );
         return $data;
     }
+
+    /**
+    * Get product category name.
+    *
+    * @return string
+    */
+   public function getProductCategoryName($prdId)
+   {
+
+	$objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+
+        $product = $objectManager->create('Magento\Catalog\Model\Product')->load($prdId);
+
+	$cats = $product->getCategoryIds();
+
+        $catsName = "";
+
+        foreach($cats as $counter => $cat)
+        {
+            $category = $objectManager->create('Magento\Catalog\Model\Category')->load($cat);
+
+	        $parentCatName = $objectManager->create('Magento\Catalog\Model\Category')->load($category->getparent_id());
+
+            $catsName .= "category:" . ($parentCatName->getName()) . ">" .$category->getName();
+
+	    if($counter < (count($cats) - 1) )
+               $catsName .= ", ";
+        }
+
+	return $catsName;
+
+   }
 
     /**
      * Get cart data.
@@ -809,19 +883,51 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Send subscriber email to Flashy.
      *
-     * @param $subscriberEmail
+     * @param $subscriberData
      * @param $storeId
      */
-    public function subscriberSend($subscriberEmail, $storeId)
+    public function subscriberSend($subscriberData, $storeId)
     {
         try {
             $list_id = $this->getFlashyList($storeId);
 
-            if (!empty($list_id) && isset($this->flashy)) {
+            if (!empty($list_id) && isset($this->flashy))
+            {
+				$subscriber = [];
+
+				if( isset( $subscriberData['email'] ) )
+                {
+					$subscriber['email'] = $subscriberData['email'];
+ 				}
+
+				if( isset( $subscriberData['firstname'] ) )
+                {
+					$subscriber['first_name'] = $subscriberData['firstname'];
+ 				}
+
+				if( isset( $subscriberData['lastname'] ) )
+                {
+					$subscriber['last_name'] = $subscriberData['lastname'];
+ 				}
+
+				if( isset( $subscriberData['dob'] ) )
+                {
+					$subscriber['birthday'] = $subscriberData['dob'];
+ 				}
+
+				if( isset( $subscriberData['city'] ) )
+                {
+					$subscriber['city'] = $subscriberData['city'];
+ 				}
+
+				if( isset( $subscriberData['street'] ) )
+                {
+					$subscriber['address'] = $subscriberData['street'];
+ 				}
 
                 if ($list_id != '') {
-                    $subscribe = Helper::tryOrLog(function () use ($subscriberEmail, $list_id) {
-                        return $this->flashy->contacts->subscribe($subscriberEmail, $list_id);
+                    $subscribe = Helper::tryOrLog(function () use ($subscriber, $list_id) {
+                        return $this->flashy->contacts->subscribe($subscriber, $list_id);
                     });
 
                     $this->addLog('Newsletter new subscriber: ' . json_encode($subscribe));
@@ -910,19 +1016,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function exportProducts($store_id, $limit, $page)
     {
         $products = $this->_productCollectionFactory->create();
-
         $products->addAttributeToSelect('*');
-
         $products->addAttributeToFilter('status', \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
-
         $products->addStoreFilter($store_id);
 
-        if ($limit)
-        {
-            $products->setPageSize($limit);
-            if ($page)
-            {
-                $products->setCurPage($page);
+		if ($limit) {
+            $products->setPageSize((int)$limit);
+            if ($page) {
+                $products->setCurPage((int)$page);
             }
         }
 
@@ -953,9 +1054,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                     'tags' => $_product->getMetaKeyword(),
                     'availability' => $availability
                 );
-
                 if ($_product->getImage() && $_product->getImage() != 'no_selection') {
-                    $export_products[$i]['image_link'] = $this->_imageHelperFactory->create()->init($_product, 'product_base_image')->getUrl();
+					$store = $this->_storeManager->getStore();
+
+                    $export_products[$i]['image_link'] = $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA). 'catalog/product' . $_product->getImage();
                 }
 
                 $categoryCollection = $_product->getCategoryCollection()->addAttributeToSelect('name');
@@ -968,15 +1070,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
                 $export_products[$i]['product_type'] = substr($export_products[$i]['product_type'], 0, -1);
 
-                $_objectManager = ObjectManager::getInstance();
+				$_objectManager = ObjectManager::getInstance();
 
-                $is_parent = $_objectManager->get('Magento\ConfigurableProduct\Model\Product\Type\Configurable')->getParentIdsByChild($product_id);
+				$is_parent = $_objectManager->get('Magento\ConfigurableProduct\Model\Product\Type\Configurable')->getParentIdsByChild($product_id);
 
-                $export_products[$i]['variant'] = (empty($is_parent[0]) ? 0 : 1);
+				$export_products[$i]['variant'] = (empty($is_parent[0]) ? 0 : 1);
 
-                $export_products[$i]['parent_id'] = (empty($is_parent[0]) ? 0 : $is_parent[0]);
+				$export_products[$i]['parent_id'] = (empty($is_parent[0]) ? 0 : $is_parent[0]);
 
-                $export_products[$i]['created_at'] = date("Y-m-d", strtotime($_product->getCreatedAt()));
+				$export_products[$i]['created_at'] = date("Y-m-d", strtotime($_product->getCreatedAt()));
 
                 $export_products[$i]['updated_at'] = date("Y-m-d", strtotime($_product->getUpdatedAt()));
 
@@ -985,6 +1087,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 continue;
             }
         }
+
         $page_size = $products->getPageSize();
         $current_page = $products->getCurPage();
         $total = $this->getProductsTotalCount($store_id);
@@ -992,6 +1095,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         $flashy_pagination = false;
         $next_url = null;
+
         if ($limit) {
             if (ceil($size / $page_size) > $current_page) {
                 $base_url = $this->getBaseUrlByScopeId($store_id);

@@ -14,14 +14,21 @@ class SubscriberSaveBefore implements ObserverInterface
      */
     public $helper;
 
+	protected $_request;
+
     /**
      * SubscriberSaveBefore constructor.
      *
      * @param Data $helper
      */
-    public function __construct(Data $helper)
+    public function __construct(
+		Data $helper,
+		\Magento\Framework\App\RequestInterface $request
+	)
     {
+
         $this->helper = $helper;
+		$this->_request = $request;
     }
 
     /**
@@ -35,7 +42,7 @@ class SubscriberSaveBefore implements ObserverInterface
             $subscriber = $observer->getEvent()->getSubscriber();
 
             if ($subscriber->getStatus() == Subscriber::STATUS_SUBSCRIBED) {
-                $this->helper->subscriberSend($subscriber->getSubscriberEmail(), $subscriber->getStoreId());
+                $this->helper->subscriberSend($this->_request->getPostValue(), $subscriber->getStoreId());
             }
         }
     }
