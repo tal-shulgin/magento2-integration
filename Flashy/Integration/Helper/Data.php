@@ -900,6 +900,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 					$subscriber['email'] = $subscriberData['email'];
  				}
 
+                if( isset( $subscriberData['telephone'] ) )
+                {
+					$subscriber['phone'] = $subscriberData['telephone'];
+ 				}
+
 				if( isset( $subscriberData['firstname'] ) )
                 {
 					$subscriber['first_name'] = $subscriberData['firstname'];
@@ -922,7 +927,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
 				if( isset( $subscriberData['street'] ) )
                 {
-					$subscriber['address'] = $subscriberData['street'];
+					$street = is_array($subscriberData['street']) ? implode(', ', $subscriberData['street']) : $subscriberData['street'];
+					$subscriber['address'] = $street;
  				}
 
                 if ($list_id != '') {
@@ -930,7 +936,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         return $this->flashy->contacts->subscribe($subscriber, $list_id);
                     });
 
-                    $this->addLog('Newsletter new subscriber: ' . json_encode($subscribe));
+                    $this->addLog('Newsletter new subscriber: ' . print_r($subscribe));
                 } else {
                     $this->addLog('Newsletter new subscriber: lists is not exists');
                 }
