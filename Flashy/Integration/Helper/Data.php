@@ -545,13 +545,33 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->addLog('Order total=' . $total);
 
             $items = $order->getAllItems();
+
             $this->addLog('Getting order items');
+
+			$objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+
+			$productData = [];
 
             $products = [];
 
             foreach ($items as $i):
                 $products[] = $i->getProductId();
+
+				if ($i->getData()) {
+
+					$product = $this->_productFactory->create()->load($i->getProductId());
+
+					$store = $this->_storeManager->getStore();
+
+					$productData[] = [
+						"image_link" => $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA). 'catalog/product' . $product->getImage(),
+						"title" => $i->getName(),
+						"quantity" => $i->getQtyOrdered(),
+						"total" => $i->getPrice(),
+					];
+				}
             endforeach;
+
             $this->addLog('Getting product ids');
 
             $currency = $order->getOrderCurrencyCode();
@@ -567,8 +587,67 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 "currency" => $currency
             );
 
-            $this->addLog('Data=' . print_r($data, true));
+			$data['context']['items'] = $productData;
 
+			$data['context']['total'] = $total;
+
+			$data['context']['order_id'] = $order->getIncrementId();
+
+			$billingData = $order->getBillingAddress()->getData();
+
+			if( !empty($billingData['street']) )
+			{
+				$data['context']['billing']['address'] = $billingData['street'];
+			}
+
+			if( !empty($billingData['city']) )
+			{
+				$data['context']['billing']['city'] = $billingData['city'];
+			}
+
+			if( !empty($billingData['postcode']) )
+			{
+				$data['context']['billing']['postcode'] = $billingData['postcode'];
+			}
+
+			if( !empty($billingData['country_id']) )
+			{
+				$country = $objectManager->create('\Magento\Directory\Model\Country')->load($billingData['country_id'])->getName();
+
+				$data['context']['billing']['state'] = $country;
+			}
+
+			$shippingData = $order->getShippingAddress()->getData();
+
+			if( !empty($shippingData['street']) )
+			{
+				$data['context']['shipping']['address'] = $shippingData['street'];
+			}
+
+			if( !empty($shippingData['city']) )
+			{
+				$data['context']['shipping']['city'] = $shippingData['city'];
+			}
+
+			if( !empty($shippingData['postcode']) )
+			{
+				$data['context']['shipping']['postcode'] = $shippingData['postcode'];
+			}
+
+			if( !empty($shippingData['country_id']) )
+			{
+				$country = $objectManager->create('\Magento\Directory\Model\Country')->load($shippingData['country_id'])->getName();
+
+				$data['context']['shipping']['country'] = $country;
+			}
+
+			if( !empty($order->getShippingDescription()) )
+			{
+				$data['context']['shipping']['method'] = $order->getShippingDescription();
+			}
+
+            $this->addLog('Data=' . print_r($data, true));
+			#
             $track = Helper::tryOrLog(function () use ($data) {
                 return $this->flashy->events->track("Purchase", $data);
             });
