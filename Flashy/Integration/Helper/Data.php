@@ -614,7 +614,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 			{
 				$country = $objectManager->create('\Magento\Directory\Model\Country')->load($billingData['country_id'])->getName();
 
-				$data['context']['billing']['state'] = $country;
+				$data['context']['billing']['country'] = $country;
+			}
+
+			if( !empty($billingData['region']) )
+			{
+				$data['context']['billing']['state'] = $billingData['region'];
 			}
 
 			$shippingData = $order->getShippingAddress()->getData();
@@ -639,6 +644,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 				$country = $objectManager->create('\Magento\Directory\Model\Country')->load($shippingData['country_id'])->getName();
 
 				$data['context']['shipping']['country'] = $country;
+			}
+
+			if( !empty($shippingData['region']) )
+			{
+				$data['context']['shipping']['state'] = $shippingData['region'];
 			}
 
 			if( !empty($order->getShippingDescription()) )
