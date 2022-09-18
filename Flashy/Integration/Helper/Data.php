@@ -509,7 +509,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 "email" => $contactData['email'],
                 "currency" => $order->getOrderCurrencyCode()
             );
-            $this->addLog('Data=' . print_r($data, true));
+            $this->addLog('Data=' . json_encode($data));
         } catch (\Exception $e) {
             $this->addLog($e->getMessage());
         }
@@ -533,7 +533,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             $contactData = $this->getContactData($order);
 
-            $this->addLog('Contact Data ' . print_r($contactData, true));
+            $this->addLog('Contact Data ' . json_encode($contactData));
 
             $create = Helper::tryOrLog(function () use ($contactData) {
                 return $this->flashy->contacts->create($contactData);
@@ -656,7 +656,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 				$data['context']['shipping']['method'] = $order->getShippingDescription();
 			}
 
-            $this->addLog('Data=' . print_r($data, true));
+            $this->addLog('Data=' . json_encode($data));
 			#
             $track = Helper::tryOrLog(function () use ($data) {
                 return $this->flashy->events->track("Purchase", $data);
@@ -1025,7 +1025,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         return $this->flashy->contacts->subscribe($subscriber, $list_id);
                     });
 
-                    $this->addLog('Newsletter new subscriber: ' . print_r($subscribe));
+                    $this->addLog('Newsletter new subscriber: ' . json_encode($subscribe));
                 } else {
                     $this->addLog('Newsletter new subscriber: lists is not exists');
                 }
