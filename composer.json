@@ -1,9 +1,8 @@
 {
-    "name": "flashyapp/module-integration",
+    "name": "flashy/module-integration",
     "description": "Flashy's extension adds tracking events (add to cart, purchase) It also allows you to sync products and order statuses.",
     "type": "magento2-module",
-    "license": "proprietary",
-	"version": "1.0.1",
+    "version": "2.0.0",
     "authors": [
         {
             "email": "hello@flashyapp.com",
@@ -11,16 +10,19 @@
         }
     ],
     "require": {
-        "flashy/flashy-php": "*"
+        "php": "~7.4"
     },
-	"minimum-stability": "dev",
-	"prefer-stable": true,
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "license": [
+        "proprietary"
+    ],
     "autoload": {
-        "psr-4": {
-            "Flashy\\Integration\\": ""
-        },
         "files": [
-            "registration.php"
-        ]
+            "src/Integration/registration.php"
+        ],
+        "psr-4": {
+            "Flashy\\Integration\\": "src/Integration"
+        }
     }
 }
