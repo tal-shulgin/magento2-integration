@@ -51,7 +51,6 @@ class SubscriberSaveAfter implements ObserverInterface
             'email' => $subscriber->getEmail(),
         ];
 
-
         try {
             /** @var CustomerRepositoryInterface $customerRepository */
             $customerRepository = $this->customerRepositoryFactory->create();
@@ -75,10 +74,10 @@ class SubscriberSaveAfter implements ObserverInterface
                 $subscriberData['city'] = $defaultBillingAddress->getCity();
                 $subscriberData['street'] = $defaultBillingAddress->getStreet();
             }
-
-            $this->helper->subscriberSend($subscriberData, $subscriber->getStoreId());
         } catch (\Exception $e) {
             // TODO: implement logic to handle Exceptions
         }
+
+        $this->helper->subscriberSend($subscriberData, $subscriber->getStoreId());
     }
 }
