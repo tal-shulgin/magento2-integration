@@ -1,6 +1,6 @@
 # Magento2 Module Flashy Integration
 
-    ``flashyapp/module-integration``
+    ``flashy/module-integration``
 
  - [Main Functionalities](#markdown-header-main-functionalities)
  - [Installation](#markdown-header-installation)
@@ -15,7 +15,7 @@ Flashy's extension adds tracking events (add to cart, purchase). It also allows 
  - Install required lib via composer with command:
     - composer require flashy/flashy-php
 
- - Copy module files into \app\code\Flashy\Integration
+ - Copy directory src/Integration  into \app\code\Flashy\
 
  - Run magento 2 standard commands:
     - php bin/magento setup:upgrade
@@ -26,22 +26,22 @@ Flashy's extension adds tracking events (add to cart, purchase). It also allows 
     - php bin/magento cache:flush
 
 ## Configuration
-		
+        
  - Flashy Integration
-	- Enabled (flashy/flashy/active)
-	- Send purchase before payment (flashy/flashy/purchase)
-	- Enabled logging (flashy/flashy/log)
-	- API Key (flashy/flashy/flashy_key)
+    - Enabled (flashy/flashy/active)
+    - Send purchase before payment (flashy/flashy/purchase)
+    - Enabled logging (flashy/flashy/log)
+    - API Key (flashy/flashy/flashy_key)
  
  - Flashy Lists
-	- Flashy List (flashy/flashy_lists/flashy_list)
+    - Flashy List (flashy/flashy_lists/flashy_list)
 
 
 ## Specifications
 
  - Helper
-	- Flashy\Integration\Helper\Data
+    - Flashy\Integration\Helper\Data
 
  - Model
-	- Carthash
+    - Carthash
 
