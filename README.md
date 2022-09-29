@@ -15,7 +15,7 @@ Flashy's extension adds tracking events (add to cart, purchase). It also allows 
  - Install required lib via composer with command:
     - composer require flashy/flashy-php
 
- - Copy module files into \app\code\Flashy\Integration
+ - Copy directory src/Integration  into \app\code\Flashy\
 
  - Run magento 2 standard commands:
     - php bin/magento setup:upgrade
