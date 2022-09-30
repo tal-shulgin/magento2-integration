@@ -56,6 +56,10 @@ class SubscriberSaveAfter implements ObserverInterface
             $customerRepository = $this->customerRepositoryFactory->create();
             $customerDataModel = $customerRepository->getById((int)$subscriber->getCustomerId());
 
+            $subscriberData['dob'] = $customerDataModel->getDob();
+            $subscriberData['firstname'] = $customerDataModel->getFirstname();
+            $subscriberData['lastname'] = $customerDataModel->getLastname();
+
             $defaultBillingAddress = null;
 
             /** @var AddressInterface $address */
@@ -68,9 +72,9 @@ class SubscriberSaveAfter implements ObserverInterface
 
             if ($defaultBillingAddress !== null) {
                 $subscriberData['telephone'] = $defaultBillingAddress->getTelephone();
-                $subscriberData['firstname'] = $defaultBillingAddress->getFirstname();
-                $subscriberData['lastname'] = $defaultBillingAddress->getLastname();
-                $subscriberData['dob'] = $customerDataModel->getDob();
+                //$subscriberData['firstname'] = $defaultBillingAddress->getFirstname();
+                //$subscriberData['lastname'] = $defaultBillingAddress->getLastname();
+                //$subscriberData['dob'] = $customerDataModel->getDob();
                 $subscriberData['city'] = $defaultBillingAddress->getCity();
                 $subscriberData['street'] = $defaultBillingAddress->getStreet();
             }
