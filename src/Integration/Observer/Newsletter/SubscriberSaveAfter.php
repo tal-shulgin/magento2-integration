@@ -72,9 +72,6 @@ class SubscriberSaveAfter implements ObserverInterface
 
             if ($defaultBillingAddress !== null) {
                 $subscriberData['telephone'] = $defaultBillingAddress->getTelephone();
-                //$subscriberData['firstname'] = $defaultBillingAddress->getFirstname();
-                //$subscriberData['lastname'] = $defaultBillingAddress->getLastname();
-                //$subscriberData['dob'] = $customerDataModel->getDob();
                 $subscriberData['city'] = $defaultBillingAddress->getCity();
                 $subscriberData['street'] = $defaultBillingAddress->getStreet();
             }
