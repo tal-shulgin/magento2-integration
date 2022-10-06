@@ -1,4 +1,4 @@
-# Magento2 Module Flashy Integration
+# Magento2 Module for Flashy
 
 ## Features
 Flashy's extension adds tracking events (add to cart, purchase). It also allows you to sync products and order statuses.
