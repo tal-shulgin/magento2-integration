@@ -1,7 +1,8 @@
 # Magento2 Module for Flashy
 
 ## Features
-Flashy's extension adds tracking events (add to cart, purchase). It also allows you to sync products and order statuses.
+Flashy's module for Magento 2+ adds tracking events (View Content, Cart Updates, Purchases, Page Views and more).
+Using the module all your products, orders and subscribers will be sync with the Flashy platform.
 
 ## Installation
 
@@ -35,7 +36,5 @@ bin/magento cache:flush
 4. Paste the API key you copied from Flashy Dashboard to __API Key__
 5. Save the configuration 
 6. Clear Magento caches. 
-
-
 
 
