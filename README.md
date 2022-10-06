@@ -9,7 +9,7 @@ Using the module all your products, orders and subscribers will be sync with the
 ### Step 1 - Install the module via composer 
 
 ```
-composer require flashy/module-integration
+composer require flashy/magento2-integration
 ```
 
 
