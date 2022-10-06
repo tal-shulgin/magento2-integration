@@ -23,12 +23,12 @@ bin/magento cache:flush
 ### Step 3 - Configuration
 
 #### Get Flashy API Key 
-1. Login to Flashy Dashboard 
+1. Login to Flashy Dashboard (https://my.flashy.app/auth/signin)
 2. Click on account avatar located on the top-right corner (top-left if your language is Hebrew) 
 3. On the menu click on API 
 4. Copy the API key
 
-#### Enable the Magneot module  
+#### Enable the Magento module  
 1. Login to Magento Admin 
 2. From the admin menu go to Flashy -> Flashy Settings 
 3. Set __Enable__ to Yes 
