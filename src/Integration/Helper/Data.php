@@ -486,7 +486,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 return $this->flashy->contacts->create($contactData);
             });
 
-            $this->addLog('Flashy contact created: ' . $create);
+            //$this->addLog('Flashy contact created: ' . $create);
 
             $total = (float)$order->getSubtotal();
             $this->addLog('Order total=' . $total);
