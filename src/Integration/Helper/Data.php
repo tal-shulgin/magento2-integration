@@ -32,6 +32,7 @@ use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollection
 use Magento\SalesRule\Model\Coupon;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Sales\Model\Order;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -516,12 +517,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return $data;
     }
 
+
     /**
-     * Place order.
-     *
-     * @param $order
+     * Build and send Purchase API request
+     * @param Order $order
+     * @return void
+     * @throws NoSuchEntityException
      */
-    public function orderPlace($order)
+    public function orderPlace(Order $order)
     {
         $this->addLog('salesOrderPlaceAfter');
 
@@ -622,39 +625,40 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 				$data['context']['billing']['state'] = $billingData['region'];
 			}
 
-			$shippingData = $order->getShippingAddress()->getData();
+            // shipping address section
+            if (!$order->getIsVirtual()) {
+                $shippingData = $order->getShippingAddress()->getData();
+            }
+            else {
+                $shippingData = $billingData;
+            }
 
-			if( !empty($shippingData['street']) )
-			{
-				$data['context']['shipping']['address'] = $shippingData['street'];
-			}
+            if (!empty($shippingData['street'])) {
+                $data['context']['shipping']['address'] = $shippingData['street'];
+            }
 
-			if( !empty($shippingData['city']) )
-			{
-				$data['context']['shipping']['city'] = $shippingData['city'];
-			}
+            if (!empty($shippingData['city'])) {
+                $data['context']['shipping']['city'] = $shippingData['city'];
+            }
 
-			if( !empty($shippingData['postcode']) )
-			{
-				$data['context']['shipping']['postcode'] = $shippingData['postcode'];
-			}
+            if (!empty($shippingData['postcode'])) {
+                $data['context']['shipping']['postcode'] = $shippingData['postcode'];
+            }
 
-			if( !empty($shippingData['country_id']) )
-			{
-				$country = $objectManager->create('\Magento\Directory\Model\Country')->load($shippingData['country_id'])->getName();
+            if (!empty($shippingData['country_id'])) {
+                $country = $objectManager->create('\Magento\Directory\Model\Country')->load($shippingData['country_id'])->getName();
 
-				$data['context']['shipping']['country'] = $country;
-			}
+                $data['context']['shipping']['country'] = $country;
+            }
 
-			if( !empty($shippingData['region']) )
-			{
-				$data['context']['shipping']['state'] = $shippingData['region'];
-			}
+            if (!empty($shippingData['region'])) {
+                $data['context']['shipping']['state'] = $shippingData['region'];
+            }
 
-			if( !empty($order->getShippingDescription()) )
-			{
-				$data['context']['shipping']['method'] = $order->getShippingDescription();
-			}
+            if (!empty($order->getShippingDescription())) {
+                $data['context']['shipping']['method'] = $order->getShippingDescription();
+            }
+
 
             $this->addLog('Data=' . json_encode($data));
 			#
@@ -1827,7 +1831,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                             ->setAttribute('base_subtotal_with_discount')
                             ->setOperator('>')
                             ->setValue($args['minimum_amount']);
-                        
+
                         $shoppingCartPriceRule->getActions()->addCondition($actions);
                     }
 
