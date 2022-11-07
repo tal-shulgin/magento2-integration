@@ -1075,7 +1075,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                         }
                     }
 
-                    $data = array_merge(array("account_id" => $account_id, "flashy_id" => $email), $data);
+                    $data = array_merge(array("account_id" => $account_id, "email" => $email), $data);
 
                     $track = Helper::tryOrLog(function () use ($data) {
                         return $this->flashy->events->track("PurchaseUpdated", $data);
