@@ -33,6 +33,9 @@ use Magento\SalesRule\Model\Coupon;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Sales\Model\Order;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\Rule\Condition\Product;
+use Magento\SalesRule\Model\Rule\Condition\Product\Found;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -595,6 +598,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 			$data['context']['total'] = $total;
 
 			$data['context']['order_id'] = $order->getIncrementId();
+
+            if( !empty($order->getCouponCode()) )
+            {
+                $data['context']['coupon_code'] = $order->getCouponCode();
+            }
 
 			$billingData = $order->getBillingAddress()->getData();
 
@@ -1511,6 +1519,35 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     }
 
     /**
+     * @param $store_id
+     * @return array
+     */
+    public function exportCategories($store_id)
+    {
+        $categoryFactory = $this->_objectManager->get('Magento\Catalog\Model\ResourceModel\Category\CollectionFactory');
+
+        $categories = $categoryFactory->create()
+            ->addAttributeToSelect('*')
+            ->setStore($store_id);
+
+        $export_categories = [];
+
+        foreach( $categories as $category )
+        {
+            $export_categories[] = [
+                "value" => $category->getId(),
+                "title" => $category->getName()
+            ];
+        }
+
+        return [
+            "success" => true,
+            "data" => $export_categories,
+            "store_id" => $store_id
+        ];
+    }
+
+    /**
      * Set Flashy Connected
      *
      * @param $value
@@ -1838,6 +1875,37 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 if( $args['free_shipping'] )
                 {
                     $shoppingCartPriceRule->setSimpleFreeShipping(1);
+                }
+
+                if( isset($args['category']) )
+                {
+                    $shoppingCartPriceRule->getConditions()->loadArray(
+                        [
+                            'type' => Combine::class,
+                            'attribute' => null,
+                            'operator' => null,
+                            'value' => '1',
+                            'is_value_processed' => null,
+                            'aggregator' => 'all',
+                            'conditions' => [
+                                    [
+                                        'type' => Found::class,
+                                        'attribute' => null,
+                                        'operator' => null,
+                                        'value' => 1,
+                                        'is_value_processed' => null,
+                                    ],
+                                    [
+                                        'type' => Product::class,
+                                        'attribute' => 'category_ids',
+                                        'operator' => '==',
+                                        'value' => $merged['category'],
+                                        'is_value_processed' => false,
+                                        'attribute_scope' => ''
+                                    ]
+                            ],
+                        ]
+                    );
                 }
 
                 $shoppingCartPriceRule->save();
