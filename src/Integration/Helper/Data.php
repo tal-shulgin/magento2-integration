@@ -1524,7 +1524,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function exportCategories($store_id)
     {
-        $categoryFactory = $this->_objectManager->get('Magento\Catalog\Model\ResourceModel\Category\CollectionFactory');
+        $objectManager = $this->_objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+
+        $categoryFactory = $objectManager->create('Magento\Catalog\Model\ResourceModel\Category\CollectionFactory');
 
         $categories = $categoryFactory->create()
             ->addAttributeToSelect('*')
