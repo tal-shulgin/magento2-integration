@@ -88,6 +88,9 @@ class Index extends Action
                 case 'reset':
                     //TODO add reset function
                     break;
+                case 'categories':
+                    $resultArray = $this->helper->exportCategories($store_id);
+                    break;
                 default:
                     $result->setStatusHeader(401);
                     $resultArray = array("success" => false, "error" => true, "message" => "Export type is not supported.");
