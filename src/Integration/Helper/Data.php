@@ -21,6 +21,7 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
@@ -33,6 +34,7 @@ use Magento\SalesRule\Model\Coupon;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Sales\Model\Order;
+use Magento\Framework\Event\ManagerInterface as EventManager;
 use Magento\SalesRule\Model\Rule\Condition\Combine;
 use Magento\SalesRule\Model\Rule\Condition\Product;
 use Magento\SalesRule\Model\Rule\Condition\Product\Found;
@@ -188,6 +190,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_stockRegistry;
 
     /**
+     * @var EventManager
+     */
+    private $eventManager;
+
+    /**
      * Data constructor.
      *
      * @param Context $context
@@ -237,7 +244,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         Logger                      $flashyLogger,
         Coupon                      $coupon,
         DirectoryList               $directorylist,
-        StockRegistryInterface      $stockRegistry
+        StockRegistryInterface      $stockRegistry,
+        EventManager $eventManager
     )
     {
         $objectManager = ObjectManager::getInstance();
@@ -270,6 +278,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_coupon = $coupon;
         $this->_directorylist = $directorylist;
         $this->_stockRegistry = $stockRegistry;
+        $this->eventManager = $eventManager;
         parent::__construct($context);
 
         $this->flashy = null;
@@ -542,7 +551,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->addLog('Contact Data ' . json_encode($contactData));
 
             $create = Helper::tryOrLog(function () use ($contactData) {
-                return $this->flashy->contacts->create($contactData);
+                return $this->flashy->contacts->create($contactData, 'email', true, true );
             });
 
             $this->addLog('Flashy contact created: ' . json_encode($create));
@@ -681,75 +690,58 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * Get contact information from order
+     * @param \Magento\Sales\Model\Order $order
+     * @return array
      */
     public function getContactData($order)
     {
+
+        // customer
         $data = [
             'email' => $order->getCustomerEmail(),
             'gender' => $order->getCustomerGender()
         ];
+        $data['first_name']  = $order->getCustomerFirstname();
+        $data['last_name']  = $order->getCustomerLastname();
 
-        if( $order->getShippingAddress() )
+        if ( !empty($order->getCustomerDob()) )
         {
-            $data['first_name'] = $order->getShippingAddress()->getFirstname();
-
-            $data['last_name'] = $order->getShippingAddress()->getLastname();
-
-            $data['phone'] = $order->getShippingAddress()->getTelephone();
-
-            $data['city'] = $order->getShippingAddress()->getCity();
-
-			$data['region'] = $order->getShippingAddress()->getRegion();
-
-			$data['address'] = $order->getShippingAddress()->getStreetLine(1);
-
-			if ( !empty($order->getShippingAddress()->getStreetLine(2)) )
-			{
-				$data['address'] .= ' , '.$order->getShippingAddress()->getStreetLine(2);
-			}
-
-			if ( !empty($order->getShippingAddress()->getStreetLine(3)) )
-			{
-				$data['address'] .= ' , '.$order->getShippingAddress()->getStreetLine(3);
-			}
-
-			if ( !empty($order->getCustomerDob()) )
-			{
-				$data['birthday'] = $order->getCustomerDob();
-			}
-
-        }
-        else if( $order->getBillingAddress() )
-        {
-            $data['first_name'] = $order->getBillingAddress()->getFirstname();
-
-            $data['last_name'] = $order->getBillingAddress()->getLastname();
-
-            $data['phone'] = $order->getBillingAddress()->getTelephone();
-
-            $data['city'] = $order->getBillingAddress()->getCity();
-
-			$data['region'] = $order->getBillingAddress()->getRegion();
-
-			$data['address'] = $order->getBillingAddress()->getStreetLine(1);
-
-			if ( !empty($order->getBillingAddress()->getStreetLine(2)) )
-			{
-				$data['address'] .= ' , '.$order->getBillingAddress()->getStreetLine(2);
-			}
-
-			if ( !empty($order->getBillingAddress()->getStreetLine(3)) )
-			{
-				$data['address'] .= ' , '.$order->getBillingAddress()->getStreetLine(3);
-			}
-
-			if ( !empty($order->getCustomerDob()) )
-			{
-				$data['birthday'] = $order->getCustomerDob();
-			}
+            $data['birthday'] = $order->getCustomerDob();
         }
 
-        return $data;
+        // address
+        if ($order->getIsVirtual()) {
+            $address = $order->getBillingAddress();
+        }
+        else {
+            $address = $order->getShippingAddress();
+        }
+
+        $data['phone'] = $address->getTelephone();
+
+        $data['city'] = $address->getCity();
+
+        $data['region'] = $address->getRegion();
+
+        $data['address'] = $address->getStreetLine(1);
+
+        if ( !empty($address->getStreetLine(2)) )
+        {
+            $data['address'] .= ' , ' . $address->getStreetLine(2);
+        }
+
+        if ( !empty($address->getStreetLine(3)) )
+        {
+            $data['address'] .= ' , ' . $address->getStreetLine(3);
+        }
+
+        $data = new DataObject($data);
+
+        $this->eventManager->dispatch('flashyapp_contact_data_prepare_after', [
+            'order' => $order, 'contact_data' => $data
+        ]);
+
+        return $data->toArray();
     }
 
     /**
